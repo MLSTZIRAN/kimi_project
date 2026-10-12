@@ -1,0 +1,641 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Liquid Glass 液态玻璃效果</title>
+<style>*{-webkit-tap-highlight-color:transparent}
+*,*::before,*::after{box-sizing:border-box}
+:root{
+  --bg-primary:#f8fafc;--bg-secondary:#e7eeef;--text-primary:#1a1a2e;
+  --text-secondary:rgba(0,0,0,0.7);--border-color:rgba(0,0,0,0.1);--panel-bg:rgba(255,255,255,0.9);
+}
+@media (prefers-color-scheme:dark){
+  :root{--bg-primary:#1b1b22;--bg-secondary:#0f0f14;--text-primary:#f0f0f5;--text-secondary:rgba(255,255,255,0.7);--border-color:rgba(255,255,255,0.1);--panel-bg:rgba(30,30,40,0.9)}
+}
+body{margin:0;padding:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;background:linear-gradient(135deg,var(--bg-primary),var(--bg-secondary));min-height:100vh;color:var(--text-primary)}
+.container{max-width:1200px;margin:0 auto;padding:2rem}
+h1{font-size:2.5rem;font-weight:800;margin-bottom:0.5rem;background:linear-gradient(135deg,#667eea,#764ba2);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.subtitle{color:var(--text-secondary);margin-bottom:2rem;font-size:1.1rem}
+.browser-notice{background:linear-gradient(135deg,rgba(102,126,234,0.1),rgba(118,75,162,0.1));border:1px solid rgba(102,126,234,0.3);border-radius:12px;padding:1rem 1.5rem;margin-bottom:2rem;display:flex;align-items:center;gap:1rem;font-size:0.9rem;line-height:1.5}
+.demo-section{margin-bottom:3rem}
+.demo-title{font-size:1.25rem;font-weight:600;margin-bottom:1rem;display:flex;align-items:center;gap:0.5rem}
+.demo-title::before{content:"";width:4px;height:1.25rem;background:linear-gradient(135deg,#667eea,#764ba2);border-radius:2px}
+.demo-area{position:relative;height:500px;border-radius:16px;overflow:hidden;border:1px solid var(--border-color);perspective:1200px;transform-style:preserve-3d;background-image:linear-gradient(to right,rgba(0,0,0,0.03) 1px,transparent 1px),linear-gradient(to bottom,rgba(0,0,0,0.03) 1px,transparent 1px),radial-gradient(120% 100% at 10% 0%,var(--bg-primary),var(--bg-secondary));background-size:24px 24px,24px 24px,100% 100%;background-position:12px 12px,12px 12px,0 0}
+@media (prefers-color-scheme:dark){.demo-area{background-image:linear-gradient(to right,rgba(255,255,255,0.03) 1px,transparent 1px),linear-gradient(to bottom,rgba(255,255,255,0.03) 1px,transparent 1px),radial-gradient(120% 100% at 10% 0%,var(--bg-primary),var(--bg-secondary))}}
+.demo-content{position:absolute;inset:0;display:grid;grid-template-columns:1fr 1fr;gap:2rem;padding:2rem}
+@media (max-width:768px){.demo-content{grid-template-columns:1fr}}
+.demo-text{display:flex;flex-direction:column;justify-content:center}
+.demo-label{display:flex;align-items:center;gap:0.75rem;color:#e53e3e;margin-bottom:1rem}
+.demo-label-line{height:2px;width:40px;background:currentColor}
+.demo-label-text{text-transform:uppercase;letter-spacing:0.25em;font-size:11px;font-weight:500}
+.demo-heading{font-size:clamp(2rem,5vw,3.5rem);font-weight:800;line-height:0.95;margin:0 0 1rem 0}
+.demo-heading-dim{opacity:0.4}
+.demo-description{font-size:1rem;line-height:1.6;color:var(--text-secondary)}
+.demo-description p{margin:0 0 0.75rem 0}
+.demo-image{position:relative;border-radius:12px;overflow:hidden;box-shadow:0 4px 20px rgba(0,0,0,0.1)}
+.demo-image img{width:100%;height:100%;object-fit:cover}
+.glass-element{position:absolute;cursor:grab;touch-action:none;user-select:none;will-change:transform,left,top;overflow:hidden}
+.glass-element:active{cursor:grabbing}
+.glass-inner{width:100%;height:100%;border-radius:inherit;will-change:transform,box-shadow;position:absolute;top:0;left:0;z-index:3;pointer-events:none}
+.glass-content-clone{position:absolute;top:0;left:0;width:100%;height:100%;overflow:hidden;border-radius:inherit;z-index:1;will-change:filter;contain:strict}
+.use-backdrop-filter .glass-content-clone{display:none}
+.glass-content-clone .demo-content-inner{position:absolute;top:0;left:0;display:grid;grid-template-columns:1fr 1fr;gap:2rem;padding:2rem;pointer-events:none;will-change:transform;contain:layout style paint;background-image:linear-gradient(to right,rgba(0,0,0,0.03) 1px,transparent 1px),linear-gradient(to bottom,rgba(0,0,0,0.03) 1px,transparent 1px),radial-gradient(120% 100% at 10% 0%,var(--bg-primary),var(--bg-secondary));background-size:24px 24px,24px 24px,100% 100%;background-position:12px 12px,12px 12px,0 0}
+@media (prefers-color-scheme:dark){.glass-content-clone .demo-content-inner{background-image:linear-gradient(to right,rgba(255,255,255,0.03) 1px,transparent 1px),linear-gradient(to bottom,rgba(255,255,255,0.03) 1px,transparent 1px),radial-gradient(120% 100% at 10% 0%,var(--bg-primary),var(--bg-secondary))}}
+@media (max-width:768px){.glass-content-clone .demo-content-inner{grid-template-columns:1fr}}
+.glass-content-clone .demo-image img{width:100%;height:100%;object-fit:cover;border-radius:12px}
+.glass-filter-svg{position:absolute;width:0;height:0;overflow:hidden;pointer-events:none}
+.use-backdrop-filter .glass-inner{backdrop-filter:url(#liquidGlassFilter);-webkit-backdrop-filter:url(#liquidGlassFilter)}
+.controls-panel{background:var(--panel-bg);backdrop-filter:blur(10px);border-radius:12px;border:1px solid var(--border-color);padding:1.5rem;margin-top:1.5rem}
+.controls-header{display:flex;align-items:center;gap:1rem;margin-bottom:1.5rem}
+.controls-header-text{text-transform:uppercase;letter-spacing:0.14em;font-size:10px;opacity:0.7}
+.controls-header-line{flex:1;height:1px;background:var(--border-color)}
+.control-row{display:flex;align-items:center;gap:1rem;margin-bottom:1rem}
+.control-row:last-child{margin-bottom:0}
+.control-label{width:160px;text-transform:uppercase;letter-spacing:0.08em;font-size:11px;opacity:0.8;flex-shrink:0}
+.control-value{width:50px;text-align:right;font-family:"SF Mono",Monaco,monospace;font-size:11px;opacity:0.6;font-variant-numeric:tabular-nums;flex-shrink:0}
+.control-slider{flex:1;-webkit-appearance:none;appearance:none;height:2px;background:rgba(128,128,128,0.2);border-radius:1px;outline:none}
+.control-slider::-webkit-slider-thumb{-webkit-appearance:none;appearance:none;width:14px;height:14px;border-radius:50%;background:linear-gradient(135deg,#667eea,#764ba2);cursor:pointer;transition:transform 0.15s ease}
+.control-slider::-webkit-slider-thumb:hover{transform:scale(1.2)}
+.control-slider::-moz-range-thumb{width:14px;height:14px;border-radius:50%;background:linear-gradient(135deg,#667eea,#764ba2);cursor:pointer;border:none}
+.surface-selector{display:flex;gap:0.5rem;flex-wrap:wrap;flex:1}
+.surface-btn{padding:0.5rem 1rem;border:1px solid var(--border-color);border-radius:8px;background:transparent;color:var(--text-primary);font-size:12px;cursor:pointer;transition:all 0.15s ease}
+.surface-btn:hover{background:rgba(102,126,234,0.1);border-color:#667eea}
+.surface-btn.active{background:linear-gradient(135deg,#667eea,#764ba2);color:white;border-color:transparent}
+.mode-toggle{display:flex;align-items:center;gap:0.75rem}
+.mode-toggle-switch{position:relative;width:44px;height:24px;background:rgba(128,128,128,0.3);border-radius:12px;cursor:pointer;transition:background 0.2s ease}
+.mode-toggle-switch.active{background:linear-gradient(135deg,#667eea,#764ba2)}
+.mode-toggle-switch::after{content:"";position:absolute;top:2px;left:2px;width:20px;height:20px;background:white;border-radius:50%;transition:transform 0.2s ease;box-shadow:0 2px 4px rgba(0,0,0,0.2)}
+.mode-toggle-switch.active::after{transform:translateX(20px)}
+.mode-toggle-label{font-size:11px;text-transform:uppercase;letter-spacing:0.08em;opacity:0.8}
+.mode-toggle-value{font-size:10px;font-family:"SF Mono",Monaco,monospace;opacity:0.6;min-width:100px}
+.mode-unsupported{font-size:10px;color:#e53e3e;opacity:0.8}
+.mode-notice{font-size:11px;opacity:0.7;line-height:1.4;font-style:italic}
+.preview-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:1rem;margin-top:1.5rem}
+@media (max-width:768px){.preview-grid{grid-template-columns:1fr}}
+.preview-card{background:var(--panel-bg);border-radius:12px;border:1px solid var(--border-color);overflow:hidden}
+.preview-header{padding:0.75rem 1rem;text-transform:uppercase;letter-spacing:0.15em;font-size:9px;opacity:0.7;border-bottom:1px solid var(--border-color)}
+.preview-content{padding:1rem;display:flex;justify-content:center;align-items:center;min-height:150px;background:#1a1a2e}
+.preview-canvas{max-width:100%;border-radius:8px}
+.footer{text-align:center;padding:2rem;color:var(--text-secondary);font-size:0.875rem}
+.footer a{color:#667eea;text-decoration:none}
+.footer a:hover{text-decoration:underline}
+.filter-svg{position:absolute;width:0;height:0;overflow:hidden}
+.slider-demo-area{height:384px;display:flex;justify-content:center;align-items:center}
+.slider-container{position:relative;width:330px;height:60px}
+.slider-track{display:inline-block;position:absolute;width:330px;height:14px;left:0;top:23px;background-color:#89898f66;border-radius:7px;cursor:pointer}
+.slider-track-inner{width:100%;height:100%;overflow:hidden;border-radius:7px}
+.slider-fill{height:14px;width:10%;border-radius:6px;background-color:#0377f7}
+.slider-thumb{position:absolute;width:90px;height:60px;top:0;border-radius:30px;transform:scale(0.6);transform-origin:center center;cursor:pointer;touch-action:none;user-select:none;background-color:rgba(255,255,255,1);box-shadow:0 3px 14px rgba(0,0,0,0.1);overflow:hidden;will-change:transform,background-color}
+.slider-thumb-clone{position:absolute;top:0;left:0;width:100%;height:100%;overflow:hidden;border-radius:inherit;z-index:1;opacity:0;will-change:opacity}
+.slider-thumb-clone-inner{position:absolute;top:0;left:0;pointer-events:none;background-image:linear-gradient(to right,rgba(0,0,0,0.03) 1px,transparent 1px),linear-gradient(to bottom,rgba(0,0,0,0.03) 1px,transparent 1px),radial-gradient(120% 100% at 10% 0%,var(--bg-primary),var(--bg-secondary));background-size:24px 24px,24px 24px,100% 100%;background-position:12px 12px,12px 12px,0 0}
+.slider-thumb-clone-inner::before{content:"";position:absolute;left:var(--track-left,0);top:var(--track-top,0);width:330px;height:14px;border-radius:7px;background-color:#89898f66;overflow:hidden}
+.slider-thumb-clone-inner::after{content:"";position:absolute;left:var(--track-left,0);top:var(--track-top,0);width:calc(330px * var(--fill-width,10) / 100);height:14px;border-radius:6px;background-color:#0377f7}
+@media (prefers-color-scheme:dark){.slider-thumb-clone-inner{background-image:linear-gradient(to right,rgba(255,255,255,0.03) 1px,transparent 1px),linear-gradient(to bottom,rgba(255,255,255,0.03) 1px,transparent 1px),radial-gradient(120% 100% at 10% 0%,var(--bg-primary),var(--bg-secondary))}}
+.slider-thumb-inner{position:absolute;top:0;left:0;width:100%;height:100%;border-radius:inherit;z-index:3;pointer-events:none}
+.switch-demo-area{height:384px;display:flex;justify-content:center;align-items:center}
+.switch-container{position:relative}
+.switch-track{display:inline-block;position:relative;width:160px;height:67px;background-color:#94949f77;border-radius:33.5px;cursor:pointer}
+.switch-thumb{position:absolute;width:146px;height:92px;border-radius:46px;top:33.5px;transform:translateY(-50%) scale(0.65);transform-origin:center center;cursor:pointer;touch-action:none;user-select:none;background-color:rgba(255,255,255,1);box-shadow:0 4px 22px rgba(0,0,0,0.1);overflow:hidden;will-change:transform,left,background-color,box-shadow}
+.switch-thumb-clone{position:absolute;top:0;left:0;width:100%;height:100%;overflow:hidden;border-radius:inherit;z-index:1;opacity:0;will-change:opacity}
+.switch-thumb-clone-inner{position:absolute;top:0;left:0;pointer-events:none;background-image:linear-gradient(to right,rgba(0,0,0,0.03) 1px,transparent 1px),linear-gradient(to bottom,rgba(0,0,0,0.03) 1px,transparent 1px),radial-gradient(120% 100% at 10% 0%,var(--bg-primary),var(--bg-secondary));background-size:24px 24px,24px 24px,100% 100%;background-position:12px 12px,12px 12px,0 0}.switch-thumb-clone-inner::before{content:"";position:absolute;left:var(--track-left);top:var(--track-top);width:160px;height:67px;border-radius:33.5px;background:var(--switch-track-color)}
+@media (prefers-color-scheme:dark){.switch-thumb-clone-inner{background-image:linear-gradient(to right,rgba(255,255,255,0.03) 1px,transparent 1px),linear-gradient(to bottom,rgba(255,255,255,0.03) 1px,transparent 1px),radial-gradient(120% 100% at 10% 0%,var(--bg-primary),var(--bg-secondary))}}
+.switch-thumb-inner{position:absolute;top:0;left:0;width:100%;height:100%;border-radius:inherit;z-index:3;pointer-events:none}
+.force-active-label{position:absolute;bottom:8px;left:50%;transform:translateX(-50%);font-size:12px;background:rgba(255,255,255,0.1);backdrop-filter:blur(10px);padding:4px 8px;border-radius:6px;display:flex;align-items:center;gap:8px;color:var(--text-secondary);cursor:pointer;user-select:none}
+@media (prefers-color-scheme:dark){.force-active-label{background:rgba(0,0,0,0.1)}}
+.force-active-label input{accent-color:#667eea}
+</style>
+</head>
+<body>
+<div class="container">
+<h1>Liquid Glass</h1>
+<p class="subtitle">SVG 滤镜折射效果 — 纯 HTML/CSS/JS 实现（物理拖拽手感升级版）</p>
+
+<div class="browser-notice" id="browserNotice">
+<div style="font-size:1.5rem">✨</div>
+<div id="noticeText">
+<strong>跨浏览器兼容：</strong>此演示使用 SVG <code>filter</code> 属性（而非 <code>backdrop-filter</code>），支持 Firefox 和 Chrome。
+</div>
+</div>
+
+<div class="demo-section">
+<div class="demo-title">交互式液态玻璃透镜</div>
+<div class="demo-area" id="demoArea">
+<div class="demo-content" id="demoContent">
+<div class="demo-text">
+<div class="demo-label"><div class="demo-label-line"></div><div class="demo-label-text">光学研究</div></div>
+<h2 class="demo-heading">Liquid Glass—<span class="demo-heading-dim">精密透镜</span></h2>
+<div class="demo-description">
+<p>拖动胶囊来弯曲页面。这是一个紧凑型 SVG 位移装置，可折射其下方的任何内容。</p>
+<p>折射场来自圆角边框轮廓；像素沿其梯度被推挤，然后顶部加上微妙的高光泛光以增加深度。</p>
+<p>扫过强边缘——高对比度使弯曲更明显。</p>
+</div>
+</div>
+<div class="demo-image"><img src="https://images.unsplash.com/photo-1559253664-ca249d4608c6?w=800&q=80" alt="frog"/></div>
+</div>
+
+<div class="glass-element" id="glassElement" style="left:100px;top:100px;width:200px;height:140px;border-radius:70px;">
+<div class="glass-inner" id="glassInner"></div>
+<div class="glass-content-clone" id="glassContentClone">
+<div class="demo-content-inner" id="demoContentInner">
+<div class="demo-text">
+<div class="demo-label"><div class="demo-label-line"></div><div class="demo-label-text">光学研究</div></div>
+<h2 class="demo-heading">Liquid Glass—<span class="demo-heading-dim">精密透镜</span></h2>
+<div class="demo-description">
+<p>拖动胶囊来弯曲页面。这是一个紧凑型 SVG 位移装置，可折射其下方的任何内容。</p>
+<p>折射场来自圆角边框轮廓；像素沿其梯度被推挤，然后顶部加上微妙的高光泛光以增加深度。</p>
+<p>扫过强边缘——高对比度使弯曲更明显。</p>
+</div>
+</div>
+<div class="demo-image"><img src="https://images.unsplash.com/photo-1559253664-ca249d4608c6?w=800&q=80" alt="frog"/></div>
+</div>
+</div>
+</div>
+
+<svg class="glass-filter-svg" id="glassFilterSvg"><defs>
+<filter id="liquidGlassFilter" x="-20%" y="-20%" width="140%" height="140%" color-interpolation-filters="sRGB">
+<feGaussianBlur in="SourceGraphic" stdDeviation="0" result="blurred" id="filterBlur"/>
+<feImage href="" x="0" y="0" width="200" height="140" result="displacementMap" id="displacementImage"/>
+<feImage href="" x="0" y="0" width="200" height="140" result="specularMap" id="specularImage"/>
+<feGaussianBlur in="displacementMap" stdDeviation="0.8" result="displacementMapSmooth"/>
+<feColorMatrix in="blurred" type="matrix" values="1 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 1 0" result="redChannel"/>
+<feColorMatrix in="blurred" type="matrix" values="0 0 0 0 0  0 1 0 0 0  0 0 0 0 0  0 0 0 1 0" result="greenChannel"/>
+<feColorMatrix in="blurred" type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 1 0 0  0 0 0 1 0" result="blueChannel"/>
+<feDisplacementMap in="redChannel" in2="displacementMapSmooth" scale="0.95" xChannelSelector="R" yChannelSelector="G" result="dispRed" id="displacementMapRed"/>
+<feDisplacementMap in="greenChannel" in2="displacementMapSmooth" scale="1" xChannelSelector="R" yChannelSelector="G" result="dispGreen" id="displacementMapGreen"/>
+<feDisplacementMap in="blueChannel" in2="displacementMapSmooth" scale="1.05" xChannelSelector="R" yChannelSelector="G" result="dispBlue" id="displacementMapBlue"/>
+<feBlend in="dispRed" in2="dispGreen" mode="lighten" result="redGreen"/>
+<feBlend in="redGreen" in2="dispBlue" mode="lighten" result="displaced"/>
+<feColorMatrix in="displaced" type="saturate" values="1" result="saturated"/>
+<feGaussianBlur in="specularMap" stdDeviation="1.2" result="specularMapSmooth"/>
+<feComponentTransfer in="specularMapSmooth" result="specularAlpha"><feFuncA type="linear" slope="1" intercept="0" id="specularAlpha"/></feComponentTransfer>
+<feComposite in="saturated" in2="specularAlpha" operator="arithmetic" k1="0" k2="1" k3="1" k4="0" result="composited"/>
+</filter>
+</defs></svg>
+</div>
+
+<div class="controls-panel">
+<div class="controls-header"><div class="controls-header-text">参数</div><div class="controls-header-line"></div></div>
+<div class="control-row">
+<div class="control-label">表面类型</div>
+<div class="surface-selector">
+<button class="surface-btn" data-surface="convex_circle">凸圆</button>
+<button class="surface-btn active" data-surface="convex_squircle">凸方圆</button>
+<button class="surface-btn" data-surface="concave">凹面</button>
+<button class="surface-btn" data-surface="lip">唇形</button>
+</div>
+</div>
+<div class="control-row">
+<div class="control-label">渲染模式</div>
+<div class="mode-toggle">
+<div class="mode-toggle-switch" id="modeToggle"></div>
+<div class="mode-toggle-label">模式:</div>
+<div class="mode-toggle-value" id="modeValue">克隆 (回退)</div>
+<span class="mode-unsupported" id="modeUnsupported" style="display:none">不支持</span>
+</div>
+</div>
+<div class="control-row" id="modeNoticeRow" style="display:none"><div class="control-label"></div><div class="mode-notice">克隆模式在玻璃元素内部复制页面内容以实现折射效果。</div></div>
+<div class="control-row"><div class="control-label">边框宽度</div><div class="control-value" id="bezelWidthValue">30</div><input type="range" class="control-slider" id="bezelWidth" min="5" max="60" value="30"/></div>
+<div class="control-row"><div class="control-label">玻璃厚度</div><div class="control-value" id="glassThicknessValue">150</div><input type="range" class="control-slider" id="glassThickness" min="20" max="300" value="150"/></div>
+<div class="control-row"><div class="control-label">折射比例</div><div class="control-value" id="refractionScaleValue">1.50</div><input type="range" class="control-slider" id="refractionScale" min="0.1" max="3" step="0.1" value="1.5"/></div>
+<div class="control-row"><div class="control-label">色散强度</div><div class="control-value" id="dispersionValue">0.05</div><input type="range" class="control-slider" id="dispersion" min="0" max="0.3" step="0.01" value="0.05"/></div>
+<div class="control-row"><div class="control-label">高光不透明度</div><div class="control-value" id="specularOpacityValue">1</div><input type="range" class="control-slider" id="specularOpacity" min="0" max="2" step="0.1" value="1"/></div>
+<div class="control-row"><div class="control-label">模糊</div><div class="control-value" id="blurValue">0</div><input type="range" class="control-slider" id="blur" min="0" max="3" step="0.1" value="0"/></div>
+</div>
+
+<div class="preview-grid">
+<div class="preview-card"><div class="preview-header">位移贴图</div><div class="preview-content"><canvas id="displacementPreview" width="200" height="140" class="preview-canvas"></canvas></div></div>
+<div class="preview-card"><div class="preview-header">高光反射</div><div class="preview-content"><canvas id="specularPreview" width="200" height="140" class="preview-canvas"></canvas></div></div>
+</div>
+</div>
+
+<div class="demo-section">
+<div class="demo-title">滑块演示</div>
+<div class="demo-area slider-demo-area" id="sliderDemoArea">
+<div class="slider-container">
+<div class="slider-track" id="sliderTrack"><div class="slider-track-inner"><div class="slider-fill" id="sliderFill"></div></div></div>
+<div class="slider-thumb" id="sliderThumb"><div class="slider-thumb-inner"></div><div class="slider-thumb-clone" id="sliderThumbClone"><div class="slider-thumb-clone-inner" id="sliderThumbCloneInner"></div></div></div>
+</div>
+<svg class="filter-svg"><defs>
+<filter id="sliderGlassFilter" x="-20%" y="-20%" width="140%" height="140%" color-interpolation-filters="sRGB">
+<feGaussianBlur in="SourceGraphic" stdDeviation="0" result="blurred" id="sliderFilterBlur"/>
+<feImage href="" x="0" y="0" width="90" height="60" result="displacementMap" id="sliderDisplacementImage"/>
+<feImage href="" x="0" y="0" width="90" height="60" result="specularMap" id="sliderSpecularImage"/>
+<feGaussianBlur in="displacementMap" stdDeviation="0.6" result="displacementMapSmooth"/>
+<feColorMatrix in="blurred" type="matrix" values="1 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 1 0" result="redChannel"/>
+<feColorMatrix in="blurred" type="matrix" values="0 0 0 0 0  0 1 0 0 0  0 0 0 0 0  0 0 0 1 0" result="greenChannel"/>
+<feColorMatrix in="blurred" type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 1 0 0  0 0 0 1 0" result="blueChannel"/>
+<feDisplacementMap in="redChannel" in2="displacementMapSmooth" scale="0.85" xChannelSelector="R" yChannelSelector="G" result="dispRed" id="sliderDisplacementMapRed"/>
+<feDisplacementMap in="greenChannel" in2="displacementMapSmooth" scale="1" xChannelSelector="R" yChannelSelector="G" result="dispGreen" id="sliderDisplacementMapGreen"/>
+<feDisplacementMap in="blueChannel" in2="displacementMapSmooth" scale="1.15" xChannelSelector="R" yChannelSelector="G" result="dispBlue" id="sliderDisplacementMapBlue"/>
+<feBlend in="dispRed" in2="dispGreen" mode="lighten" result="redGreen"/>
+<feBlend in="redGreen" in2="dispBlue" mode="lighten" result="displaced"/>
+<feColorMatrix in="displaced" type="saturate" values="1" result="saturated" id="sliderSaturation"/>
+<feGaussianBlur in="specularMap" stdDeviation="1.0" result="specularMapSmooth"/>
+<feComponentTransfer in="specularMapSmooth" result="specularAlpha"><feFuncA type="linear" slope="0.4" intercept="0" id="sliderSpecularAlpha"/></feComponentTransfer>
+<feComposite in="saturated" in2="specularAlpha" operator="arithmetic" k1="0" k2="1" k3="1" k4="0" result="composited"/>
+</filter></defs></svg>
+<label class="force-active-label"><input type="checkbox" id="sliderForceActive"/> 强制激活</label>
+</div>
+<div class="controls-panel">
+<div class="controls-header"><div class="controls-header-text">滑块参数</div><div class="controls-header-line"></div></div>
+<div class="control-row"><div class="control-label">边框宽度</div><div class="control-value" id="sliderBezelWidthValue">25</div><input type="range" class="control-slider" id="sliderBezelWidth" min="2" max="30" value="25"/></div>
+<div class="control-row"><div class="control-label">折射级别</div><div class="control-value" id="sliderRefractionValue">1.00</div><input type="range" class="control-slider" id="sliderRefraction" min="0.1" max="3" step="0.1" value="1"/></div>
+<div class="control-row"><div class="control-label">色散强度</div><div class="control-value" id="sliderDispersionValue">0.15</div><input type="range" class="control-slider" id="sliderDispersion" min="0" max="0.3" step="0.01" value="0.15"/></div>
+<div class="control-row"><div class="control-label">高光不透明度</div><div class="control-value" id="sliderSpecularOpacityValue">0.40</div><input type="range" class="control-slider" id="sliderSpecularOpacity" min="0" max="2" step="0.05" value="0.4"/></div>
+<div class="control-row"><div class="control-label">高光饱和度</div><div class="control-value" id="sliderSpecularSaturationValue">1</div><input type="range" class="control-slider" id="sliderSpecularSaturation" min="0" max="20" step="1" value="1"/></div>
+<div class="control-row"><div class="control-label">模糊级别</div><div class="control-value" id="sliderBlurValue">0.0</div><input type="range" class="control-slider" id="sliderBlur" min="0" max="3" step="0.1" value="0"/></div>
+</div>
+</div>
+
+<div class="demo-section">
+<div class="demo-title">开关演示</div>
+<div class="demo-area switch-demo-area" id="switchDemoArea">
+<div class="switch-container">
+<div class="switch-track" id="switchTrack"></div>
+<div class="switch-thumb" id="switchThumb"><div class="switch-thumb-inner"></div><div class="switch-thumb-clone" id="switchThumbClone"><div class="switch-thumb-clone-inner" id="switchThumbCloneInner"></div></div></div>
+</div>
+<svg class="filter-svg"><defs>
+<filter id="switchGlassFilter" x="-20%" y="-20%" width="140%" height="140%" color-interpolation-filters="sRGB">
+<feGaussianBlur in="SourceGraphic" stdDeviation="0.2" result="blurred" id="switchFilterBlur"/>
+<feImage href="" x="0" y="0" width="146" height="92" result="displacementMap" id="switchDisplacementImage"/>
+<feImage href="" x="0" y="0" width="146" height="92" result="specularMap" id="switchSpecularImage"/>
+<feGaussianBlur in="displacementMap" stdDeviation="0.5" result="displacementMapSmooth"/>
+<feColorMatrix in="blurred" type="matrix" values="1 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 1 0" result="redChannel"/>
+<feColorMatrix in="blurred" type="matrix" values="0 0 0 0 0  0 1 0 0 0  0 0 0 0 0  0 0 0 1 0" result="greenChannel"/>
+<feColorMatrix in="blurred" type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 1 0 0  0 0 0 1 0" result="blueChannel"/>
+<feDisplacementMap in="redChannel" in2="displacementMapSmooth" scale="0.85" xChannelSelector="R" yChannelSelector="G" result="dispRed" id="switchDisplacementMapRed"/>
+<feDisplacementMap in="greenChannel" in2="displacementMapSmooth" scale="1" xChannelSelector="R" yChannelSelector="G" result="dispGreen" id="switchDisplacementMapGreen"/>
+<feDisplacementMap in="blueChannel" in2="displacementMapSmooth" scale="1.15" xChannelSelector="R" yChannelSelector="G" result="dispBlue" id="switchDisplacementMapBlue"/>
+<feBlend in="dispRed" in2="dispGreen" mode="lighten" result="redGreen"/>
+<feBlend in="redGreen" in2="dispBlue" mode="lighten" result="displaced"/>
+<feColorMatrix in="displaced" type="saturate" values="1" result="saturated" id="switchSaturation"/>
+<feGaussianBlur in="specularMap" stdDeviation="0.8" result="specularMapSmooth"/>
+<feComponentTransfer in="specularMapSmooth" result="specularAlpha"><feFuncA type="linear" slope="0.5" intercept="0" id="switchSpecularAlpha"/></feComponentTransfer>
+<feComposite in="saturated" in2="specularAlpha" operator="arithmetic" k1="0" k2="1" k3="1" k4="0" result="composited"/>
+</filter></defs></svg>
+<label class="force-active-label"><input type="checkbox" id="switchForceActive"/> 强制激活</label>
+</div>
+<div class="controls-panel">
+<div class="controls-header"><div class="controls-header-text">开关参数</div><div class="controls-header-line"></div></div>
+<div class="control-row"><div class="control-label">边框宽度</div><div class="control-value" id="switchBezelWidthValue">19</div><input type="range" class="control-slider" id="switchBezelWidth" min="2" max="35" value="19"/></div>
+<div class="control-row"><div class="control-label">折射级别</div><div class="control-value" id="switchRefractionValue">1.00</div><input type="range" class="control-slider" id="switchRefraction" min="0.1" max="3" step="0.1" value="1"/></div>
+<div class="control-row"><div class="control-label">色散强度</div><div class="control-value" id="switchDispersionValue">0.15</div><input type="range" class="control-slider" id="switchDispersion" min="0" max="0.3" step="0.01" value="0.15"/></div>
+<div class="control-row"><div class="control-label">高光不透明度</div><div class="control-value" id="switchSpecularOpacityValue">0.50</div><input type="range" class="control-slider" id="switchSpecularOpacity" min="0" max="2" step="0.05" value="0.5"/></div>
+<div class="control-row"><div class="control-label">高光饱和度</div><div class="control-value" id="switchSpecularSaturationValue">1</div><input type="range" class="control-slider" id="switchSpecularSaturation" min="0" max="20" step="1" value="1"/></div>
+<div class="control-row"><div class="control-label">模糊级别</div><div class="control-value" id="switchBlurValue">0.2</div><input type="range" class="control-slider" id="switchBlur" min="0" max="3" step="0.1" value="0.2"/></div>
+</div>
+</div>
+
+<div class="footer">
+<p>基于 <a href="https://github.com/winaviation/liquid-glass-demo" target="_blank">liquid-glass-demo</a> by winaviation</p>
+<p>原始概念来自 <a href="https://kube.io" target="_blank">kube.io</a></p>
+</div>
+</div>
+
+<script>
+const SurfaceEquations={convex_circle:x=>Math.sqrt(1-Math.pow(1-x,2)),convex_squircle:x=>Math.pow(1-Math.pow(1-x,4),1/4),concave:x=>1-Math.sqrt(1-Math.pow(x,2)),lip:x=>{const convex=Math.pow(1-Math.pow(1-Math.min(x*2,1),4),1/4),concave=1-Math.sqrt(1-Math.pow(1-x,2))+0.1,smootherstep=6*Math.pow(x,5)-15*Math.pow(x,4)+10*Math.pow(x,3);return convex*(1-smootherstep)+concave*smootherstep}};
+class Spring{constructor(value,stiffness=300,damping=20){this.value=value;this.target=value;this.velocity=0;this.stiffness=stiffness;this.damping=damping}setTarget(target){this.target=target}update(dt){const force=(this.target-this.value)*this.stiffness,dampingForce=this.velocity*this.damping;this.velocity+=(force-dampingForce)*dt;this.value+=this.velocity*dt;return this.value}isSettled(){return Math.abs(this.target-this.value)<0.001&&Math.abs(this.velocity)<0.001}}
+const state={surfaceType:"convex_squircle",bezelWidth:30,glassThickness:150,refractiveIndex:1.5,refractionScale:1.5,dispersion:0.05,specularOpacity:1,blur:0,objectWidth:200,objectHeight:140,radius:70,maximumDisplacement:0,isDragging:false,dragOffset:{x:0,y:0},velocityX:0,velocityY:0,lastX:0,lastY:0,lastTime:0};
+const springs={scale:new Spring(0.85,400,25),scaleX:new Spring(1,400,30),scaleY:new Spring(1,400,30),shadowOffsetX:new Spring(0,400,30),shadowOffsetY:new Spring(4,400,30),shadowBlur:new Spring(12,400,30),shadowAlpha:new Spring(0.15,300,25),refractionBoost:new Spring(0.8,300,18),posX:new Spring(100,300,25),posY:new Spring(100,300,25),rotateX:new Spring(0,300,20),rotateY:new Spring(0,300,20),press:new Spring(0,400,25)};
+let animationFrameId=null;
+const glassElement=document.getElementById("glassElement"),glassInner=document.getElementById("glassInner"),demoArea=document.getElementById("demoArea"),demoContent=document.getElementById("demoContent"),glassFilterSvg=document.getElementById("glassFilterSvg"),glassContentClone=document.getElementById("glassContentClone"),demoContentInner=document.getElementById("demoContentInner"),displacementPreview=document.getElementById("displacementPreview"),specularPreview=document.getElementById("specularPreview");
+let useBackdropFilter=false,backdropFilterSupported=false;
+function detectBackdropFilterSupport(){const isChromium=!!window.chrome,testEl=document.createElement("div");testEl.style.backdropFilter="url(#test)";const supportsBackdropFilterUrl=testEl.style.backdropFilter.includes("url");backdropFilterSupported=isChromium&&supportsBackdropFilterUrl;useBackdropFilter=backdropFilterSupported;updateModeUI();if(useBackdropFilter){glassElement.classList.add("use-backdrop-filter");console.log("Using native backdrop-filter")}else{console.log("Using cloned content fallback")}}
+function updateModeUI(){const modeToggle=document.getElementById("modeToggle"),modeValue=document.getElementById("modeValue"),modeUnsupported=document.getElementById("modeUnsupported"),browserNotice=document.getElementById("browserNotice"),noticeText=document.getElementById("noticeText");if(useBackdropFilter){modeToggle.classList.add("active");modeValue.textContent="Backdrop-filter"}else{modeToggle.classList.remove("active");modeValue.textContent="克隆 (回退)"}if(!backdropFilterSupported){modeUnsupported.style.display=useBackdropFilter?"inline":"none"}const modeNoticeRow=document.getElementById("modeNoticeRow");if(modeNoticeRow)modeNoticeRow.style.display=useBackdropFilter?"none":"flex";if(useBackdropFilter){if(backdropFilterSupported){noticeText.innerHTML="<strong>使用原生 backdrop-filter：</strong>您的浏览器支持 SVG 滤镜的 backdrop-filter，通过 GPU 合成提供最佳性能。";browserNotice.style.background="linear-gradient(135deg,rgba(72,187,120,0.1),rgba(56,161,105,0.1))";browserNotice.style.borderColor="rgba(72,187,120,0.3)"}else{noticeText.innerHTML="<strong>不支持 backdrop-filter：</strong>您的浏览器不支持 SVG 滤镜的 backdrop-filter。效果无法正确渲染，请切换到克隆模式。";browserNotice.style.background="linear-gradient(135deg,rgba(245,101,101,0.1),rgba(229,62,62,0.1))";browserNotice.style.borderColor="rgba(245,101,101,0.3)"}}else{noticeText.innerHTML="<strong>跨浏览器兼容：</strong>此演示使用 SVG <code>filter</code> 属性（而非 <code>backdrop-filter</code>），支持 Firefox 和 Chrome。";browserNotice.style.background="linear-gradient(135deg,rgba(102,126,234,0.1),rgba(118,75,162,0.1))";browserNotice.style.borderColor="rgba(102,126,234,0.3)"}}
+function toggleRenderMode(){useBackdropFilter=!useBackdropFilter;if(useBackdropFilter){glassElement.classList.add("use-backdrop-filter");glassContentClone.style.filter="none"}else{glassElement.classList.remove("use-backdrop-filter");glassContentClone.style.filter="url(#liquidGlassFilter)";updateContentClonePosition(true)}updateModeUI();console.log(useBackdropFilter?"Switched to backdrop-filter mode":"Switched to clone fallback mode")}
+let cachedAreaRect=null,lastAreaRectUpdate=0;const RECT_CACHE_DURATION=100;
+function getAreaRect(){const now=performance.now();if(!cachedAreaRect||now-lastAreaRectUpdate>RECT_CACHE_DURATION){cachedAreaRect=demoArea.getBoundingClientRect();lastAreaRectUpdate=now}return cachedAreaRect}
+let lastPositionUpdate=0;const POSITION_UPDATE_THROTTLE=16;let pendingPositionUpdate=false;
+function updateContentClonePosition(force=false){if(useBackdropFilter)return;const now=performance.now();if(!force&&now-lastPositionUpdate<POSITION_UPDATE_THROTTLE){if(!pendingPositionUpdate){pendingPositionUpdate=true;requestAnimationFrame(()=>{pendingPositionUpdate=false;updateContentClonePosition(true)})}return}lastPositionUpdate=now;const areaRect=getAreaRect();const glassLeft=parseFloat(glassElement.style.left)||0,glassTop=parseFloat(glassElement.style.top)||0;demoContentInner.style.width=areaRect.width+"px";demoContentInner.style.height=areaRect.height+"px";demoContentInner.style.transform=`translate(${-glassLeft}px,${-glassTop}px)`;if(!glassContentClone.style.filter)glassContentClone.style.filter="url(#liquidGlassFilter)"}
+window.addEventListener("resize",()=>{cachedAreaRect=null;updateContentClonePosition(true)});
+
+function featherEdge(imageData,featherRadius=2){const w=imageData.width,h=imageData.height,d=imageData.data;const temp=new Uint8ClampedArray(d);for(let y=0;y<h;y++){for(let x=0;x<w;x++){let r=0,g=0,b=0,a=0,count=0;for(let dy=-featherRadius;dy<=featherRadius;dy++){for(let dx=-featherRadius;dx<=featherRadius;dx++){const nx=x+dx,ny=y+dy;if(nx>=0&&nx<w&&ny>=0&&ny<h){const idx=(ny*w+nx)*4;const weight=1/(1+Math.sqrt(dx*dx+dy*dy));r+=d[idx]*weight;g+=d[idx+1]*weight;b+=d[idx+2]*weight;a+=d[idx+3]*weight;count+=weight;}}}const idx=(y*w+x)*4;temp[idx]=Math.round(r/count);temp[idx+1]=Math.round(g/count);temp[idx+2]=Math.round(b/count);temp[idx+3]=Math.round(a/count);}}for(let i=0;i<d.length;i++)d[i]=temp[i];return imageData;}
+function gaussianBlur(imageData,radius=1.5){const w=imageData.width,h=imageData.height,d=imageData.data;const sigma=radius/3;const size=Math.ceil(radius*3)*2+1;const half=Math.floor(size/2);const kernel=new Float32Array(size);let sum=0;for(let i=0;i<size;i++){const x=i-half;kernel[i]=Math.exp(-(x*x)/(2*sigma*sigma));sum+=kernel[i];}for(let i=0;i<size;i++)kernel[i]/=sum;const temp=new Uint8ClampedArray(d);for(let y=0;y<h;y++){for(let x=0;x<w;x++){let r=0,g=0,b=0,a=0;for(let k=0;k<size;k++){const sx=Math.min(w-1,Math.max(0,x+k-half));const idx=(y*w+sx)*4;r+=d[idx]*kernel[k];g+=d[idx+1]*kernel[k];b+=d[idx+2]*kernel[k];a+=d[idx+3]*kernel[k];}const idx=(y*w+x)*4;temp[idx]=Math.round(r);temp[idx+1]=Math.round(g);temp[idx+2]=Math.round(b);temp[idx+3]=Math.round(a);}}const out=new Uint8ClampedArray(d);for(let y=0;y<h;y++){for(let x=0;x<w;x++){let r=0,g=0,b=0,a=0;for(let k=0;k<size;k++){const sy=Math.min(h-1,Math.max(0,y+k-half));const idx=(sy*w+x)*4;r+=temp[idx]*kernel[k];g+=temp[idx+1]*kernel[k];b+=temp[idx+2]*kernel[k];a+=temp[idx+3]*kernel[k];}const idx=(y*w+x)*4;out[idx]=Math.round(r);out[idx+1]=Math.round(g);out[idx+2]=Math.round(b);out[idx+3]=Math.round(a);}}for(let i=0;i<d.length;i++)d[i]=out[i];return imageData;}
+function calculateDisplacementMap1D(glassThickness,bezelWidth,surfaceFn,refractiveIndex,samples=128){const eta=1/refractiveIndex;function refract(normalX,normalY){const dot=normalY,k=1-eta*eta*(1-dot*dot);if(k<0)return null;const kSqrt=Math.sqrt(k);return[-(eta*dot+kSqrt)*normalX,eta-(eta*dot+kSqrt)*normalY]}const result=[];for(let i=0;i<samples;i++){const x=i/samples,y=surfaceFn(x),dx=x<1?0.0001:-0.0001,y2=surfaceFn(Math.max(0,Math.min(1,x+dx))),derivative=(y2-y)/dx,magnitude=Math.sqrt(derivative*derivative+1),normal=[-derivative/magnitude,-1/magnitude],refracted=refract(normal[0],normal[1]);if(!refracted){result.push(0)}else{const remainingHeightOnBezel=y*bezelWidth,remainingHeight=remainingHeightOnBezel+glassThickness;result.push(refracted[0]*(remainingHeight/refracted[1]))}}return result}
+function calculateDisplacementMap2D(canvasWidth,canvasHeight,objectWidth,objectHeight,radius,bezelWidth,maximumDisplacement,precomputedMap){const imageData=new ImageData(canvasWidth,canvasHeight);for(let i=0;i<imageData.data.length;i+=4){imageData.data[i]=128;imageData.data[i+1]=128;imageData.data[i+2]=0;imageData.data[i+3]=255}const radiusSquared=radius*radius,radiusPlusOneSquared=(radius+1)*(radius+1),radiusMinusBezelSquared=Math.max(0,(radius-bezelWidth)*(radius-bezelWidth)),widthBetweenRadiuses=objectWidth-radius*2,heightBetweenRadiuses=objectHeight-radius*2,objectX=(canvasWidth-objectWidth)/2,objectY=(canvasHeight-objectHeight)/2;for(let y1=0;y1<objectHeight;y1++){for(let x1=0;x1<objectWidth;x1++){const idx=((objectY+y1)*canvasWidth+objectX+x1)*4;const isOnLeftSide=x1<radius,isOnRightSide=x1>=objectWidth-radius,isOnTopSide=y1<radius,isOnBottomSide=y1>=objectHeight-radius;const x=isOnLeftSide?x1-radius:isOnRightSide?x1-radius-widthBetweenRadiuses:0,y=isOnTopSide?y1-radius:isOnBottomSide?y1-radius-heightBetweenRadiuses:0;const distanceToCenterSquared=x*x+y*y;const isInBezel=distanceToCenterSquared<=radiusPlusOneSquared&&distanceToCenterSquared>=radiusMinusBezelSquared;if(isInBezel){const opacity=distanceToCenterSquared<radiusSquared?1:1-(Math.sqrt(distanceToCenterSquared)-Math.sqrt(radiusSquared))/(Math.sqrt(radiusPlusOneSquared)-Math.sqrt(radiusSquared));const distanceFromCenter=Math.sqrt(distanceToCenterSquared),distanceFromSide=radius-distanceFromCenter,cos=distanceFromCenter>0?x/distanceFromCenter:0,sin=distanceFromCenter>0?y/distanceFromCenter:0;const bezelRatio=Math.max(0,Math.min(1,distanceFromSide/bezelWidth)),bezelIndex=Math.floor(bezelRatio*precomputedMap.length);const distance=precomputedMap[Math.max(0,Math.min(bezelIndex,precomputedMap.length-1))]||0;const dX=maximumDisplacement>0?(-cos*distance)/maximumDisplacement:0,dY=maximumDisplacement>0?(-sin*distance)/maximumDisplacement:0;imageData.data[idx]=Math.max(0,Math.min(255,128+dX*127*opacity));imageData.data[idx+1]=Math.max(0,Math.min(255,128+dY*127*opacity));imageData.data[idx+2]=0;imageData.data[idx+3]=Math.round(255*opacity);}}}featherEdge(imageData,1);return imageData;}
+function calculateSpecularHighlight(objectWidth,objectHeight,radius,bezelWidth,specularAngle=Math.PI/3){const imageData=new ImageData(objectWidth,objectHeight);for(let i=0;i<imageData.data.length;i+=4){imageData.data[i]=255;imageData.data[i+1]=255;imageData.data[i+2]=255;imageData.data[i+3]=0}const specularVector=[Math.cos(specularAngle),Math.sin(specularAngle)];const specularThickness=3.0;const radiusSquared=radius*radius;const radiusPlusOuter=radius+2.5;const radiusPlusOuterSquared=radiusPlusOuter*radiusPlusOuter;const radiusMinusSpecular=Math.max(0,radius-specularThickness);const radiusMinusSpecularSquared=radiusMinusSpecular*radiusMinusSpecular;const widthBetweenRadiuses=objectWidth-radius*2;const heightBetweenRadiuses=objectHeight-radius*2;for(let y1=0;y1<objectHeight;y1++){for(let x1=0;x1<objectWidth;x1++){const idx=(y1*objectWidth+x1)*4;const isOnLeftSide=x1<radius,isOnRightSide=x1>=objectWidth-radius;const isOnTopSide=y1<radius,isOnBottomSide=y1>=objectHeight-radius;const x=isOnLeftSide?x1-radius:isOnRightSide?x1-radius-widthBetweenRadiuses:0;const y=isOnTopSide?y1-radius:isOnBottomSide?y1-radius-heightBetweenRadiuses:0;const distanceToCenterSquared=x*x+y*y;const isNearEdge=distanceToCenterSquared<=radiusPlusOuterSquared&&distanceToCenterSquared>=radiusMinusSpecularSquared;if(isNearEdge){const distanceFromCenter=Math.sqrt(distanceToCenterSquared);const distanceFromSide=radius-distanceFromCenter;let edgeOpacity=1;if(distanceToCenterSquared>radiusSquared){const t=(distanceFromCenter-radius)/(radiusPlusOuter-radius);edgeOpacity=1-t*t*(3-2*t);}let innerOpacity=1;if(distanceFromCenter<radiusMinusSpecular+0.5){const t=(radiusMinusSpecular+0.5-distanceFromCenter)/0.5;innerOpacity=1-t*t*(3-2*t);}const opacity=edgeOpacity*innerOpacity;if(opacity<=0)continue;const cos=distanceFromCenter>0?x/distanceFromCenter:0;const sin=distanceFromCenter>0?-y/distanceFromCenter:0;const dotProduct=Math.abs(cos*specularVector[0]+sin*specularVector[1]);const edgeRatio=Math.max(0,Math.min(1,distanceFromSide/specularThickness));const smoothFalloff=(1-Math.cos(edgeRatio*Math.PI))/2;const coefficient=dotProduct*smoothFalloff;const softCoeff=Math.pow(coefficient,0.7);const color=Math.min(255,255*softCoeff);const finalOpacity=Math.min(255,color*softCoeff*opacity);imageData.data[idx]=color;imageData.data[idx+1]=color;imageData.data[idx+2]=color;imageData.data[idx+3]=Math.round(finalOpacity);}}}gaussianBlur(imageData,1.2);return imageData;}
+function imageDataToDataURL(imageData){const canvas=document.createElement("canvas");canvas.width=imageData.width;canvas.height=imageData.height;const ctx=canvas.getContext("2d");ctx.putImageData(imageData,0,0);return canvas.toDataURL()}
+function updateFilter(updateScale=true){const surfaceFn=SurfaceEquations[state.surfaceType],precomputed=calculateDisplacementMap1D(state.glassThickness,state.bezelWidth,surfaceFn,state.refractiveIndex);state.maximumDisplacement=Math.max(...precomputed.map(Math.abs));const displacementData=calculateDisplacementMap2D(state.objectWidth,state.objectHeight,state.objectWidth,state.objectHeight,state.radius,state.bezelWidth,state.maximumDisplacement||1,precomputed),specularData=calculateSpecularHighlight(state.objectWidth,state.objectHeight,state.radius,state.bezelWidth);const displacementUrl=imageDataToDataURL(displacementData),specularUrl=imageDataToDataURL(specularData);document.getElementById("displacementImage").setAttribute("href",displacementUrl);document.getElementById("specularImage").setAttribute("href",specularUrl);if(updateScale){const baseScale=state.maximumDisplacement*state.refractionScale;document.getElementById("displacementMapRed").setAttribute("scale",baseScale*(1-state.dispersion));document.getElementById("displacementMapGreen").setAttribute("scale",baseScale);document.getElementById("displacementMapBlue").setAttribute("scale",baseScale*(1+state.dispersion));}document.getElementById("specularAlpha").setAttribute("slope",state.specularOpacity);document.getElementById("filterBlur").setAttribute("stdDeviation",state.blur);displacementPreview.getContext("2d").putImageData(displacementData,0,0);specularPreview.getContext("2d").putImageData(specularData,0,0);updateContentClonePosition()}
+
+function animationLoop(timestamp){
+    const dt=Math.min(0.032,1/60);
+    
+    if(state.isDragging){
+        springs.scale.setTarget(1.05);
+        springs.shadowOffsetX.setTarget(4);
+        springs.shadowOffsetY.setTarget(24);
+        springs.shadowBlur.setTarget(32);
+        springs.shadowAlpha.setTarget(0.25);
+        springs.refractionBoost.setTarget(1);
+    } else {
+        springs.scale.setTarget(0.85);
+        springs.shadowOffsetX.setTarget(0);
+        springs.shadowOffsetY.setTarget(6);
+        springs.shadowBlur.setTarget(16);
+        springs.shadowAlpha.setTarget(0.15);
+        springs.refractionBoost.setTarget(0.8);
+        springs.press.setTarget(0);
+        springs.rotateX.setTarget(0);
+        springs.rotateY.setTarget(0);
+    }
+    
+    const velocityMagnitude=Math.sqrt(state.velocityX**2+state.velocityY**2);
+    const squishAmount=Math.min(0.15,velocityMagnitude/3000);
+    if(velocityMagnitude>50){
+        const vxNorm=state.velocityX/velocityMagnitude;
+        const vyNorm=state.velocityY/velocityMagnitude;
+        
+        if (vxNorm < 0) {
+            springs.scaleX.setTarget(1 - squishAmount * 0.5 * Math.abs(vxNorm) - squishAmount * 0.5 * Math.abs(vyNorm));
+            springs.scaleY.setTarget(1 + squishAmount * Math.abs(vxNorm) + squishAmount * Math.abs(vyNorm));
+        } else {
+            springs.scaleX.setTarget(1+squishAmount*Math.abs(vxNorm)-squishAmount*0.5*Math.abs(vyNorm));
+            springs.scaleY.setTarget(1+squishAmount*Math.abs(vyNorm)-squishAmount*0.5*Math.abs(vxNorm));
+        }
+    } else {
+        springs.scaleX.setTarget(1);
+        springs.scaleY.setTarget(1);
+    }
+    
+    const scale=springs.scale.update(dt);
+    const scaleX=springs.scaleX.update(dt);
+    const scaleY=springs.scaleY.update(dt);
+    const shadowOffsetX=springs.shadowOffsetX.update(dt);
+    const shadowOffsetY=springs.shadowOffsetY.update(dt);
+    const shadowBlur=springs.shadowBlur.update(dt);
+    const shadowAlpha=springs.shadowAlpha.update(dt);
+    const refractionBoost=springs.refractionBoost.update(dt);
+    const rotateX=springs.rotateX.update(dt);
+    const rotateY=springs.rotateY.update(dt);
+    const press=springs.press.update(dt);
+    
+    const rawPosX = springs.posX.update(dt);
+    const rawPosY = springs.posY.update(dt);
+    let posX = rawPosX;
+    let posY = rawPosY;
+    
+    if(!state.isDragging) {
+        const areaRect = getAreaRect();
+        const maxX = areaRect.width - state.objectWidth;
+        const maxY = areaRect.height - state.objectHeight;
+        if (posX < 0) { 
+            posX = 0; 
+            springs.posX.value = 0; 
+            if (springs.posX.velocity < 0) springs.posX.velocity *= -0.4; 
+        } else if (posX > maxX) { 
+            posX = maxX; 
+            springs.posX.value = maxX; 
+            if (springs.posX.velocity > 0) springs.posX.velocity *= -0.4; 
+        }
+        if (posY < 0) { 
+            posY = 0; 
+            springs.posY.value = 0; 
+            if (springs.posY.velocity < 0) springs.posY.velocity *= -0.4; 
+        } else if (posY > maxY) { 
+            posY = maxY; 
+            springs.posY.value = maxY; 
+            if (springs.posY.velocity > 0) springs.posY.velocity *= -0.4; 
+        }
+    }
+    
+    glassElement.style.left = posX + "px";
+    glassElement.style.top = posY + "px";
+    updateContentClonePosition(true);
+    
+    const pressScaleX = 1 + press * 0.04;
+    const pressScaleY = 1 - press * 0.04;
+    
+    glassElement.style.transform=`scale(${scale*scaleX*pressScaleX},${scale*scaleY*pressScaleY}) rotateX(${rotateX}deg) rotateY(${rotateY}deg)`;
+    
+    const insetAlpha=shadowAlpha*0.6;
+    glassInner.style.boxShadow=`${shadowOffsetX}px ${shadowOffsetY}px ${shadowBlur}px rgba(0,0,0,${shadowAlpha}),inset ${shadowOffsetX*0.3}px ${shadowOffsetY*0.4}px 16px rgba(0,0,0,${insetAlpha}),inset ${-shadowOffsetX*0.3}px ${-shadowOffsetY*0.4}px 16px rgba(255,255,255,${insetAlpha*0.8})`;
+    
+    const dynamicRefractionScale=state.refractionScale*refractionBoost;
+    const baseScale = state.maximumDisplacement * dynamicRefractionScale;
+    document.getElementById("displacementMapRed").setAttribute("scale", baseScale * (1 - state.dispersion));
+    document.getElementById("displacementMapGreen").setAttribute("scale", baseScale);
+    document.getElementById("displacementMapBlue").setAttribute("scale", baseScale * (1 + state.dispersion));
+    
+    if(!state.isDragging){state.velocityX*=0.95;state.velocityY*=0.95;}
+    
+    const allSettled=Object.values(springs).every(s=>s.isSettled())&&Math.abs(state.velocityX)<1&&Math.abs(state.velocityY)<1;
+    if(!allSettled){
+        animationFrameId=requestAnimationFrame(animationLoop);
+    } else {
+        animationFrameId=null;
+    }
+}
+function startAnimationLoop(){if(!animationFrameId)animationFrameId=requestAnimationFrame(animationLoop)}
+
+function initDragging(){
+    glassElement.addEventListener("mousedown",startDrag);
+    glassElement.addEventListener("touchstart",startDrag,{passive:false});
+    document.addEventListener("mousemove",drag);
+    document.addEventListener("touchmove",drag,{passive:false});
+    document.addEventListener("mouseup",endDrag);
+    document.addEventListener("touchend",endDrag);
+}
+
+function startDrag(e){
+    e.preventDefault();
+    state.isDragging=true;
+    const clientX=e.touches?e.touches[0].clientX:e.clientX;
+    const clientY=e.touches?e.touches[0].clientY:e.clientY;
+    const rect=glassElement.getBoundingClientRect();
+    const currentScale=springs.scale.value;
+    
+    state.dragOffset.x=(clientX-rect.left)/currentScale;
+    state.dragOffset.y=(clientY-rect.top)/currentScale;
+    
+    springs.press.setTarget(1);
+    
+    state.lastX=clientX;
+    state.lastY=clientY;
+    state.lastTime=performance.now();
+    state.velocityX=0;
+    state.velocityY=0;
+    startAnimationLoop();
+}
+
+function drag(e){
+    if(!state.isDragging)return;
+    e.preventDefault();
+    const clientX=e.touches?e.touches[0].clientX:e.clientX;
+    const clientY=e.touches?e.touches[0].clientY:e.clientY;
+    const areaRect=demoArea.getBoundingClientRect();
+    const now=performance.now();
+    const dt=Math.max(1,now-state.lastTime)/1000;
+    
+    state.velocityX=(clientX-state.lastX)/dt;
+    state.velocityY=(clientY-state.lastY)/dt;
+    state.lastX=clientX;
+    state.lastY=clientY;
+    state.lastTime=now;
+    
+    let newX=clientX-areaRect.left-state.dragOffset.x;
+    let newY=clientY-areaRect.top-state.dragOffset.y;
+    
+    const maxX=areaRect.width-state.objectWidth;
+    const maxY=areaRect.height-state.objectHeight;
+    
+    newX = Math.max(0, Math.min(newX, maxX));
+    newY = Math.max(0, Math.min(newY, maxY));
+    
+    glassElement.style.left=newX+"px";
+    glassElement.style.top=newY+"px";
+    
+    springs.posX.value = newX;
+    springs.posX.target = newX;
+    springs.posY.value = newY;
+    springs.posY.target = newY;
+    
+    updateContentClonePosition(true);
+    
+    const centerX = state.objectWidth / 2;
+    const centerY = state.objectHeight / 2;
+    const offsetFromCenterX = state.dragOffset.x - centerX;
+    const offsetFromCenterY = state.dragOffset.y - centerY;
+    const normX = Math.max(-1, Math.min(1, offsetFromCenterX / centerX));
+    const normY = Math.max(-1, Math.min(1, offsetFromCenterY / centerY));
+    const maxTilt = 12;
+    springs.rotateY.setTarget(normX * maxTilt);
+    springs.rotateX.setTarget(-normY * maxTilt);
+}
+
+function endDrag(){
+    if(!state.isDragging)return;
+    state.isDragging=false;
+    
+    // 1. 取消甩出去的惯性
+    state.velocityX = 0;
+    state.velocityY = 0;
+    
+    // 2. 锁定在松手位置，防止回弹
+    const areaRect = getAreaRect();
+    let currentX = parseFloat(glassElement.style.left) || 0;
+    let currentY = parseFloat(glassElement.style.top) || 0;
+    const maxX = areaRect.width - state.objectWidth;
+    const maxY = areaRect.height - state.objectHeight;
+    currentX = Math.max(0, Math.min(currentX, maxX));
+    currentY = Math.max(0, Math.min(currentY, maxY));
+    
+    springs.posX.value = currentX;
+    springs.posX.target = currentX;
+    springs.posX.velocity = 0;
+    springs.posY.value = currentY;
+    springs.posY.target = currentY;
+    springs.posY.velocity = 0;
+    
+    // 恢复位置弹簧的默认参数
+    springs.posX.stiffness = 300;
+    springs.posX.damping = 25;
+    springs.posY.stiffness = 300;
+    springs.posY.damping = 25;
+    
+    springs.press.setTarget(0);
+    springs.rotateX.setTarget(0);
+    springs.rotateY.setTarget(0);
+    
+    startAnimationLoop();
+}
+
+function initControls(){document.querySelectorAll(".surface-btn").forEach(btn=>{btn.addEventListener("click",()=>{document.querySelectorAll(".surface-btn").forEach(b=>b.classList.remove("active"));btn.classList.add("active");state.surfaceType=btn.dataset.surface;updateFilter()})});const sliders={bezelWidth:{prop:"bezelWidth",format:v=>Math.round(v)},glassThickness:{prop:"glassThickness",format:v=>Math.round(v)},refractionScale:{prop:"refractionScale",format:v=>v.toFixed(2)},dispersion:{prop:"dispersion",format:v=>v.toFixed(2)},specularOpacity:{prop:"specularOpacity",format:v=>v.toFixed(2)},blur:{prop:"blur",format:v=>v.toFixed(1)}};Object.entries(sliders).forEach(([id,config])=>{const slider=document.getElementById(id),valueDisplay=document.getElementById(id+"Value");slider.addEventListener("input",()=>{const value=parseFloat(slider.value);state[config.prop]=value;valueDisplay.textContent=config.format(value);updateFilter()})})}
+function init(){detectBackdropFilterSupport();initDragging();initControls();updateFilter(false);updateContentClonePosition(true);document.getElementById("modeToggle").addEventListener("click",toggleRenderMode);
+    springs.scale.value=0.85;springs.scale.target=0.85;
+    springs.posX.value=parseFloat(glassElement.style.left)||0;springs.posX.target=springs.posX.value;
+    springs.posY.value=parseFloat(glassElement.style.top)||0;springs.posY.target=springs.posY.value;
+    startAnimationLoop();
+}
+
+const sliderConfig={thumbWidth:90,thumbHeight:60,thumbRadius:30,trackWidth:330,trackHeight:14,bezelWidth:25,glassThickness:80,refractiveIndex:1.45,SCALE_REST:0.6,SCALE_DRAG:1};
+const sliderState={value:10,pointerDown:false,forceActive:false,specularOpacity:0.4,specularSaturation:1,refractionBase:1,dispersion:0.15,blur:0,maximumDisplacement:0,velocityX:0,lastX:0,lastTime:0};
+// 调整滑块缩放弹簧参数，使其在变回白块时有自然的回弹效果
+const sliderSprings={scale:new Spring(sliderConfig.SCALE_REST,500,18),backgroundOpacity:new Spring(1,2000,80),scaleRatio:new Spring(0.4,100,10),scaleX:new Spring(1,400,30),scaleY:new Spring(1,400,30)};
+let sliderAnimationFrameId=null;
+function getSliderActive(){return sliderState.forceActive||sliderState.pointerDown}
+function updateSliderFilter(){const surfaceFn=SurfaceEquations.convex_squircle,precomputed=calculateDisplacementMap1D(sliderConfig.glassThickness,sliderConfig.bezelWidth,surfaceFn,sliderConfig.refractiveIndex);sliderState.maximumDisplacement=Math.max(...precomputed.map(Math.abs));const displacementData=calculateDisplacementMap2D(sliderConfig.thumbWidth,sliderConfig.thumbHeight,sliderConfig.thumbWidth,sliderConfig.thumbHeight,sliderConfig.thumbRadius,sliderConfig.bezelWidth,sliderState.maximumDisplacement||1,precomputed),specularData=calculateSpecularHighlight(sliderConfig.thumbWidth,sliderConfig.thumbHeight,sliderConfig.thumbRadius,sliderConfig.bezelWidth);document.getElementById("sliderDisplacementImage").setAttribute("href",imageDataToDataURL(displacementData));document.getElementById("sliderSpecularImage").setAttribute("href",imageDataToDataURL(specularData));document.getElementById("sliderSpecularAlpha").setAttribute("slope",sliderState.specularOpacity);document.getElementById("sliderFilterBlur").setAttribute("stdDeviation",sliderState.blur);document.getElementById("sliderSaturation").setAttribute("values",sliderState.specularSaturation)}
+function sliderAnimationLoop(){const dt=Math.min(0.032,1/60),isActive=getSliderActive();sliderSprings.scale.setTarget(isActive?sliderConfig.SCALE_DRAG:sliderConfig.SCALE_REST);sliderSprings.backgroundOpacity.setTarget(isActive?0.1:1);const pressMultiplier=isActive?0.9:0.4;sliderSprings.scaleRatio.setTarget(pressMultiplier*sliderState.refractionBase);if(!sliderState.pointerDown)sliderState.velocityX*=0.95;const velocityMagnitude=Math.abs(sliderState.velocityX),squishAmount=Math.min(0.18,velocityMagnitude/1500);if(velocityMagnitude>10){if(sliderState.velocityX>0){sliderSprings.scaleX.setTarget(1+squishAmount);sliderSprings.scaleY.setTarget(1-squishAmount*0.3)}else{sliderSprings.scaleX.setTarget(1-squishAmount*0.3);sliderSprings.scaleY.setTarget(1+squishAmount)}}else{sliderSprings.scaleX.setTarget(1);sliderSprings.scaleY.setTarget(1)}const scale=sliderSprings.scale.update(dt),backgroundOpacity=sliderSprings.backgroundOpacity.update(dt),scaleRatio=sliderSprings.scaleRatio.update(dt),scaleX=sliderSprings.scaleX.update(dt),scaleY=sliderSprings.scaleY.update(dt);const sliderThumb=document.getElementById("sliderThumb");sliderThumb.style.transform=`scale(${scale*scaleX},${scale*scaleY})`;sliderThumb.style.backgroundColor=`rgba(255,255,255,${backgroundOpacity})`;document.getElementById("sliderThumbClone").style.opacity=1-backgroundOpacity;
+    
+    // 动态模糊：在状态变化或快速滑动时产生
+    const opacityDiff = Math.abs(backgroundOpacity - (isActive ? 0.1 : 1));
+    const stateBlur = Math.min(2, opacityDiff * 5);
+    const velBlur = Math.min(1.5, velocityMagnitude / 1500);
+    const totalBlur = Math.max(velBlur, stateBlur);
+    sliderThumb.style.filter = totalBlur > 0.05 ? `blur(${totalBlur}px)` : 'none';
+
+    const baseScale=sliderState.maximumDisplacement*scaleRatio;
+    document.getElementById("sliderDisplacementMapRed").setAttribute("scale",baseScale*(1-sliderState.dispersion));
+    document.getElementById("sliderDisplacementMapGreen").setAttribute("scale",baseScale);
+    document.getElementById("sliderDisplacementMapBlue").setAttribute("scale",baseScale*(1+sliderState.dispersion));
+    const allSettled=Object.values(sliderSprings).every(s=>s.isSettled())&&Math.abs(sliderState.velocityX)<1;if(!allSettled){sliderAnimationFrameId=requestAnimationFrame(sliderAnimationLoop)}else{sliderAnimationFrameId=null}}
+function startSliderAnimation(){if(!sliderAnimationFrameId)sliderAnimationFrameId=requestAnimationFrame(sliderAnimationLoop)}
+function initSliderDemo(){const sliderThumb=document.getElementById("sliderThumb"),sliderTrack=document.getElementById("sliderTrack"),sliderFill=document.getElementById("sliderFill"),sliderThumbClone=document.getElementById("sliderThumbClone"),sliderThumbCloneInner=document.getElementById("sliderThumbCloneInner");updateSliderFilter();sliderThumbClone.style.filter="url(#sliderGlassFilter)";const thumbWidthRest=sliderConfig.thumbWidth*sliderConfig.SCALE_REST;function updateSliderUI(){sliderFill.style.width=sliderState.value+"%";const ratio=sliderState.value/100,x0=thumbWidthRest/2,x100=sliderConfig.trackWidth-thumbWidthRest/2,thumbCenterX=x0+ratio*(x100-x0),thumbX=thumbCenterX-sliderConfig.thumbWidth/2;sliderThumb.style.left=thumbX+"px";const areaRect=document.getElementById("sliderDemoArea").getBoundingClientRect(),containerLeft=(areaRect.width-sliderConfig.trackWidth)/2,containerTop=(areaRect.height-sliderConfig.thumbHeight)/2,trackTop=(sliderConfig.thumbHeight-sliderConfig.trackHeight)/2;sliderThumbCloneInner.style.width=areaRect.width+"px";sliderThumbCloneInner.style.height=areaRect.height+"px";sliderThumbCloneInner.style.transform=`translate(${-(containerLeft+thumbX)}px,${-containerTop}px)`;sliderThumbCloneInner.style.setProperty("--track-left",containerLeft+"px");sliderThumbCloneInner.style.setProperty("--track-top",containerTop+trackTop+"px");sliderThumbCloneInner.style.setProperty("--fill-width",sliderState.value.toString())}function onPointerDown(e){e.preventDefault();sliderState.pointerDown=true;const clientX=e.touches?e.touches[0].clientX:e.clientX;sliderState.lastX=clientX;sliderState.lastTime=performance.now();sliderState.velocityX=0;startSliderAnimation()}function onPointerMove(e){if(!sliderState.pointerDown)return;e.preventDefault();const clientX=e.touches?e.touches[0].clientX:e.clientX;const now=performance.now(),dt=Math.max(1,now-sliderState.lastTime)/1000;sliderState.velocityX=(clientX-sliderState.lastX)/dt;sliderState.lastX=clientX;sliderState.lastTime=now;const trackRect=sliderTrack.getBoundingClientRect(),x0=trackRect.left+thumbWidthRest/2,x100=trackRect.right-thumbWidthRest/2,x=Math.max(x0,Math.min(x100,clientX)),ratio=(x-x0)/(x100-x0);sliderState.value=Math.max(0,Math.min(100,ratio*100));updateSliderUI();startSliderAnimation()}function onPointerUp(){sliderState.pointerDown=false;sliderState.velocityX=0;startSliderAnimation()}sliderThumb.addEventListener("mousedown",onPointerDown);sliderThumb.addEventListener("touchstart",onPointerDown,{passive:false});sliderTrack.addEventListener("mousedown",e=>{onPointerDown(e);onPointerMove(e)});window.addEventListener("mousemove",onPointerMove);window.addEventListener("touchmove",onPointerMove,{passive:false});window.addEventListener("mouseup",onPointerUp);window.addEventListener("touchend",onPointerUp);document.getElementById("sliderForceActive").addEventListener("change",e=>{sliderState.forceActive=e.target.checked;startSliderAnimation()});
+    const sliderBezelWidth=document.getElementById("sliderBezelWidth"),sliderBezelWidthValue=document.getElementById("sliderBezelWidthValue");
+    sliderBezelWidth.addEventListener("input",()=>{sliderConfig.bezelWidth=parseInt(sliderBezelWidth.value);sliderBezelWidthValue.textContent=sliderConfig.bezelWidth;updateSliderFilter()});
+    const sliderDispersion=document.getElementById("sliderDispersion"),sliderDispersionValue=document.getElementById("sliderDispersionValue");
+    sliderDispersion.addEventListener("input",()=>{sliderState.dispersion=parseFloat(sliderDispersion.value);sliderDispersionValue.textContent=sliderState.dispersion.toFixed(2);startSliderAnimation()});
+    const sliderControls={sliderSpecularOpacity:{prop:"specularOpacity",format:v=>v.toFixed(2),update:()=>document.getElementById("sliderSpecularAlpha").setAttribute("slope",sliderState.specularOpacity)},sliderSpecularSaturation:{prop:"specularSaturation",format:v=>Math.round(v).toString(),update:()=>document.getElementById("sliderSaturation").setAttribute("values",sliderState.specularSaturation)},sliderRefraction:{prop:"refractionBase",format:v=>v.toFixed(2),update:()=>startSliderAnimation()},sliderBlur:{prop:"blur",format:v=>v.toFixed(1),update:()=>document.getElementById("sliderFilterBlur").setAttribute("stdDeviation",sliderState.blur)}};Object.entries(sliderControls).forEach(([id,config])=>{const slider=document.getElementById(id),valueDisplay=document.getElementById(id+"Value");slider.addEventListener("input",()=>{const value=parseFloat(slider.value);sliderState[config.prop]=value;valueDisplay.textContent=config.format(value);config.update()})});updateSliderUI();window.addEventListener("resize",updateSliderUI);startSliderAnimation()}
+
+const switchConfig={trackWidth:160,trackHeight:67,thumbWidth:146,thumbHeight:92,thumbRadius:46,bezelWidth:19,glassThickness:47,refractiveIndex:1.5,THUMB_REST_SCALE:0.65,THUMB_ACTIVE_SCALE:0.9};
+switchConfig.THUMB_REST_OFFSET=((1-switchConfig.THUMB_REST_SCALE)*switchConfig.thumbWidth)/2;
+switchConfig.TRAVEL=switchConfig.trackWidth-switchConfig.trackHeight-(switchConfig.thumbWidth-switchConfig.thumbHeight)*switchConfig.THUMB_REST_SCALE;
+const switchState={checked:true,pointerDown:false,forceActive:false,isClickAction:false,clickDelayStarted:false,initialPointerX:0,xDragRatio:1,specularOpacity:0.5,specularSaturation:1,refractionBase:1,dispersion:0.15,blur:0.2,maximumDisplacement:0,velocityX:0,lastX:0,lastTime:0};
+// 调整开关缩放弹簧参数，使其在变回白块时有自然的回弹效果
+const switchSprings={xRatio:new Spring(1,1000,80),scale:new Spring(switchConfig.THUMB_REST_SCALE,500,18),backgroundOpacity:new Spring(1,2000,80),trackColor:new Spring(1,1000,80),scaleRatio:new Spring(0.4,100,10),scaleX:new Spring(1,400,30),scaleY:new Spring(1,400,30)};
+let switchAnimationFrameId=null;
+function getSwitchActive(){return switchState.forceActive||switchState.pointerDown||switchState.isClickAction}
+function updateSwitchFilter(){const surfaceFn=SurfaceEquations.convex_squircle,precomputed=calculateDisplacementMap1D(switchConfig.glassThickness,switchConfig.bezelWidth,surfaceFn,switchConfig.refractiveIndex);switchState.maximumDisplacement=Math.max(...precomputed.map(Math.abs));const displacementData=calculateDisplacementMap2D(switchConfig.thumbWidth,switchConfig.thumbHeight,switchConfig.thumbWidth,switchConfig.thumbHeight,switchConfig.thumbRadius,switchConfig.bezelWidth,switchState.maximumDisplacement||1,precomputed),specularData=calculateSpecularHighlight(switchConfig.thumbWidth,switchConfig.thumbHeight,switchConfig.thumbRadius,switchConfig.bezelWidth);document.getElementById("switchDisplacementImage").setAttribute("href",imageDataToDataURL(displacementData));document.getElementById("switchSpecularImage").setAttribute("href",imageDataToDataURL(specularData));document.getElementById("switchSpecularAlpha").setAttribute("slope",switchState.specularOpacity);document.getElementById("switchFilterBlur").setAttribute("stdDeviation",switchState.blur);document.getElementById("switchSaturation").setAttribute("values",switchState.specularSaturation)}
+function switchAnimationLoop(){const dt=Math.min(0.032,1/60),isActive=getSwitchActive();switchSprings.scale.setTarget(isActive?switchConfig.THUMB_ACTIVE_SCALE:switchConfig.THUMB_REST_SCALE);switchSprings.backgroundOpacity.setTarget(isActive?0.1:1);const pressMultiplier=isActive?0.9:0.4;switchSprings.scaleRatio.setTarget(pressMultiplier*switchState.refractionBase);if(!switchState.pointerDown)switchSprings.xRatio.setTarget(switchState.checked?1:0);switchSprings.trackColor.setTarget(Math.max(0, Math.min(1, switchSprings.xRatio.target)));if(!switchState.pointerDown)switchState.velocityX*=0.95;
+    // 同时检测鼠标拖拽速度与滑块自身动画速度，使点击切换时也有挤压效果
+    const xRatioVel = switchSprings.xRatio.velocity; 
+    const combinedVel = Math.abs(switchState.velocityX) + Math.abs(xRatioVel) * 20;
+    const squishAmount=Math.min(0.18,combinedVel/3000);
+    if(combinedVel>50){
+        if(switchState.velocityX < 0 || xRatioVel < 0){
+            switchSprings.scaleX.setTarget(1 - squishAmount * 0.5);
+            switchSprings.scaleY.setTarget(1 + squishAmount);
+        } else {
+            switchSprings.scaleX.setTarget(1 + squishAmount);
+            switchSprings.scaleY.setTarget(1 - squishAmount * 0.5);
+        }
+    } else {
+        switchSprings.scaleX.setTarget(1);
+        switchSprings.scaleY.setTarget(1);
+    }
+    const xRatio=switchSprings.xRatio.update(dt),scale=switchSprings.scale.update(dt),backgroundOpacity=switchSprings.backgroundOpacity.update(dt),trackColor=switchSprings.trackColor.update(dt),scaleRatio=switchSprings.scaleRatio.update(dt),scaleX=switchSprings.scaleX.update(dt),scaleY=switchSprings.scaleY.update(dt);const switchThumb=document.getElementById("switchThumb"),switchTrack=document.getElementById("switchTrack"),switchThumbClone=document.getElementById("switchThumbClone"),switchThumbCloneInner=document.getElementById("switchThumbCloneInner");switchThumbClone.style.opacity=1-backgroundOpacity;
+    
+    // 动态模糊：从白块变透明时，产生柔和的散焦模糊
+    const opacityDiff = Math.abs(backgroundOpacity - (isActive ? 0.1 : 1));
+    const stateBlur = Math.min(2.5, opacityDiff * 6);
+    const velBlur = Math.min(1.5, combinedVel / 2000);
+    const totalBlur = Math.max(velBlur, stateBlur);
+    switchThumb.style.filter = totalBlur > 0.05 ? `blur(${totalBlur}px)` : 'none';
+
+    const marginLeft=-switchConfig.THUMB_REST_OFFSET+(switchConfig.trackHeight-switchConfig.thumbHeight*switchConfig.THUMB_REST_SCALE)/2,thumbX=marginLeft+xRatio*switchConfig.TRAVEL;switchThumb.style.left=thumbX+"px";switchThumb.style.transform=`translateY(-50%) scale(${scale*scaleX},${scale*scaleY})`;switchThumb.style.backgroundColor=`rgba(255,255,255,${backgroundOpacity})`;if(switchState.pointerDown){switchThumb.style.boxShadow="0 4px 22px rgba(0,0,0,0.1), inset 2px 7px 24px rgba(0,0,0,0.09), inset -2px -7px 24px rgba(255,255,255,0.09)"}else{switchThumb.style.boxShadow="0 4px 22px rgba(0,0,0,0.1)"}const offR=148,offG=148,offB=159,offA=0.47,onR=59,onG=191,onB=78,onA=0.93;const r=Math.round(offR+(onR-offR)*trackColor),g=Math.round(offG+(onG-offG)*trackColor),b=Math.round(offB+(onB-offB)*trackColor),a=offA+(onA-offA)*trackColor;switchTrack.style.backgroundColor=`rgba(${r},${g},${b},${a})`;const areaRect=document.getElementById("switchDemoArea").getBoundingClientRect(),containerLeft=(areaRect.width-switchConfig.trackWidth)/2,containerTop=(areaRect.height-switchConfig.trackHeight)/2,thumbYOffset=switchConfig.trackHeight/2-switchConfig.thumbHeight/2;switchThumbCloneInner.style.width=areaRect.width+"px";switchThumbCloneInner.style.height=areaRect.height+"px";switchThumbCloneInner.style.transform=`translate(${-(containerLeft+thumbX)}px,${-(containerTop+thumbYOffset)}px)`;switchThumbCloneInner.style.setProperty("--switch-track-color",`rgba(${r},${g},${b},${a})`);switchThumbCloneInner.style.setProperty("--track-left",containerLeft+"px");switchThumbCloneInner.style.setProperty("--track-top",containerTop+"px");
+    const baseScale=switchState.maximumDisplacement*scaleRatio;
+    document.getElementById("switchDisplacementMapRed").setAttribute("scale",baseScale*(1-switchState.dispersion));
+    document.getElementById("switchDisplacementMapGreen").setAttribute("scale",baseScale);
+    document.getElementById("switchDisplacementMapBlue").setAttribute("scale",baseScale*(1+switchState.dispersion));
+    // 到达终点前的一定距离处，提前触发取消激活状态（约提前100ms）
+    if (switchState.isClickAction && !switchState.pointerDown && !switchState.clickDelayStarted) {
+        const remainingDistance = Math.abs(switchSprings.xRatio.target - switchSprings.xRatio.value);
+        if (remainingDistance < 0.03) {
+            switchState.clickDelayStarted = true;
+            switchState.isClickAction = false; // 提前开始收缩动画
+            startSwitchAnimation();
+        }
+    }
+    const allSettled=Object.values(switchSprings).every(s=>s.isSettled());if(!allSettled){switchAnimationFrameId=requestAnimationFrame(switchAnimationLoop)}else{switchAnimationFrameId=null}}
+function startSwitchAnimation(){if(!switchAnimationFrameId)switchAnimationFrameId=requestAnimationFrame(switchAnimationLoop)}
+function initSwitchDemo(){const switchThumb=document.getElementById("switchThumb"),switchTrack=document.getElementById("switchTrack"),switchThumbClone=document.getElementById("switchThumbClone");updateSwitchFilter();switchThumbClone.style.filter="url(#switchGlassFilter)";function onPointerDown(e){e.preventDefault();e.stopPropagation();switchState.pointerDown=true;switchState.initialPointerX=e.touches?e.touches[0].clientX:e.clientX;switchState.xDragRatio=switchState.checked?1:0;switchState.isClickAction=false;switchState.clickDelayStarted=false;const clientX=e.touches?e.touches[0].clientX:e.clientX;switchState.lastX=clientX;switchState.lastTime=performance.now();switchState.velocityX=0;startSwitchAnimation()}function onPointerMove(e){if(!switchState.pointerDown)return;e.stopPropagation();const clientX=e.touches?e.touches[0].clientX:e.clientX;const now=performance.now(),dt=Math.max(1,now-switchState.lastTime)/1000;switchState.velocityX=(clientX-switchState.lastX)/dt;switchState.lastX=clientX;switchState.lastTime=now;const baseRatio=switchState.checked?1:0,displacementX=clientX-switchState.initialPointerX;let ratio=baseRatio+displacementX/switchConfig.TRAVEL;const overflow=ratio<0?-ratio:ratio>1?ratio-1:0,overflowSign=ratio<0?-1:1,dampedOverflow=(overflowSign*overflow)/22;switchState.xDragRatio=Math.min(1,Math.max(0,ratio))+dampedOverflow;switchSprings.xRatio.setTarget(switchState.xDragRatio);startSwitchAnimation()}function onPointerUp(e){if(!switchState.pointerDown)return;const clientX=e.changedTouches?e.changedTouches[0].clientX:e.clientX;const distance=Math.abs(clientX-switchState.initialPointerX);switchState.pointerDown=false;switchState.velocityX=0;if(distance<4){switchState.checked=!switchState.checked;switchState.isClickAction=true;switchState.clickDelayStarted=false;}else{switchState.checked=switchState.xDragRatio>0.5;switchState.isClickAction=false;}startSwitchAnimation()}switchThumb.addEventListener("mousedown",onPointerDown);switchThumb.addEventListener("touchstart",onPointerDown,{passive:false});switchTrack.addEventListener("click",e=>{if(e.target===switchTrack){switchState.checked=!switchState.checked;switchState.isClickAction=true;switchState.clickDelayStarted=false;startSwitchAnimation()}});window.addEventListener("mousemove",onPointerMove);window.addEventListener("touchmove",onPointerMove,{passive:false});window.addEventListener("mouseup",onPointerUp);window.addEventListener("touchend",onPointerUp);document.getElementById("switchForceActive").addEventListener("change",e=>{switchState.forceActive=e.target.checked;startSwitchAnimation()});
+    const switchBezelWidth=document.getElementById("switchBezelWidth"),switchBezelWidthValue=document.getElementById("switchBezelWidthValue");
+    switchBezelWidth.addEventListener("input",()=>{switchConfig.bezelWidth=parseInt(switchBezelWidth.value);switchBezelWidthValue.textContent=switchConfig.bezelWidth;updateSwitchFilter()});
+    const switchDispersion=document.getElementById("switchDispersion"),switchDispersionValue=document.getElementById("switchDispersionValue");
+    switchDispersion.addEventListener("input",()=>{switchState.dispersion=parseFloat(switchDispersion.value);switchDispersionValue.textContent=switchState.dispersion.toFixed(2);startSwitchAnimation()});
+    const switchControls={switchSpecularOpacity:{prop:"specularOpacity",format:v=>v.toFixed(2),update:()=>document.getElementById("switchSpecularAlpha").setAttribute("slope",switchState.specularOpacity)},switchSpecularSaturation:{prop:"specularSaturation",format:v=>Math.round(v).toString(),update:()=>document.getElementById("switchSaturation").setAttribute("values",switchState.specularSaturation)},switchRefraction:{prop:"refractionBase",format:v=>v.toFixed(2),update:()=>startSwitchAnimation()},switchBlur:{prop:"blur",format:v=>v.toFixed(1),update:()=>document.getElementById("switchFilterBlur").setAttribute("stdDeviation",switchState.blur)}};Object.entries(switchControls).forEach(([id,config])=>{const slider=document.getElementById(id),valueDisplay=document.getElementById(id+"Value");slider.addEventListener("input",()=>{const value=parseFloat(slider.value);switchState[config.prop]=value;valueDisplay.textContent=config.format(value);config.update()})});startSwitchAnimation()}
+
+if(document.readyState==="loading"){document.addEventListener("DOMContentLoaded",()=>{init();initSliderDemo();initSwitchDemo()})}else{init();initSliderDemo();initSwitchDemo()}
+</script>
+</body>
+</html>
