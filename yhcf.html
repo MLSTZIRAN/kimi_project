@@ -2,7 +2,7 @@
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <title>硬核厨房 · 颠锅之间</title>
 <style>
 :root{
@@ -10,15 +10,19 @@
   --or:#ff8a3d;--red:#ff3b30;--gr:#31d17c;--am:#ffb02e;--txt:#f5efe9;--sub:#b6a79c;
 }
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-html,body{margin:0;padding:0}
+/* 手机上 dvh 是"动态"高度（地址栏显示时更小），而 position:fixed 的包含块是
+   "大视口"。两者不一致就会在底部露出一条没被画布盖住的 body 背景 —— 就是那条大黑框。
+   这里把页面本身锁成视口大小、禁止滚动，全屏层一律用 inset:0 撑满，不再用 dvh。 */
+html,body{margin:0;padding:0;height:100%;width:100%;overflow:hidden;
+  overscroll-behavior:none}
 body{
   background:radial-gradient(120% 80% at 50% 0%,#2c1b12 0%,#150f0c 55%,#0d0908 100%);
-  color:var(--txt);min-height:100dvh;user-select:none;
+  color:var(--txt);height:100%;user-select:none;
   font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
   touch-action:manipulation;
 }
 /* 3D 画布 = 整个画面：铺满全屏做背景，UI 全部浮在它上面 */
-#stage{position:fixed;inset:0;width:100%;height:100dvh;display:block;
+#stage{position:fixed;inset:0;width:100%;height:100%;display:block;
   background:#16100c;z-index:0;touch-action:none;cursor:crosshair}
 #app{max-width:520px;margin:0 auto;position:relative;z-index:5;pointer-events:none}
 #app .topbar,#app .hudcard,#app .cookhud,#app .cross,#app .clabel{pointer-events:auto}
@@ -735,7 +739,14 @@ const T3 = {
   },
   resize(){
     if(!this.cv) return;
-    const cssW = Math.max(160, this.cv.clientWidth||430), cssH = Math.max(96, this.cv.clientHeight||212);
+    /* 手机端 clientHeight 可能被 dvh/工具栏影响而偏小，这里以可见视口为准取最大值，
+       保证画布永远盖满、底部不会露出未渲染的黑条。 */
+    const vw = window.innerWidth || 0, vh = window.innerHeight || 0;
+    let cssW = this.cv.clientWidth || vw || 430;
+    let cssH = this.cv.clientHeight || vh || 212;
+    if(vw) cssW = Math.max(cssW, Math.min(vw, cssW || vw));
+    if(vh) cssH = Math.max(cssH, vh);
+    cssW = Math.max(160, cssW); cssH = Math.max(96, cssH);
     const dpr = Math.min(2, window.devicePixelRatio||1);
     // 显示画布（粒子/提示叠在这上面，按 dpr 出图更清晰）
     this.cv.width = Math.round(cssW*dpr); this.cv.height = Math.round(cssH*dpr);
@@ -6911,7 +6922,25 @@ document.addEventListener('keydown', e=>{
   if(e.key==='Shift') setSlow(true);
 });
 document.addEventListener('keyup', e=>{ if(e.key==='Shift') setSlow(false); });
-window.addEventListener('resize', ()=>{ if(T3.cv) T3.resize(); });
+function onViewportChange(){
+  if(T3.cv) T3.resize();
+  /* 顺带把画布的 CSS 尺寸钉到可见视口，彻底堵住底部黑条 */
+  const st = byId('stage');
+  if(st){
+    /* 只往上取、绝不往下压：画布本来由 inset:0 撑满包含块，
+       万一某些浏览器量出来偏小，就用可见视口补到更大，底部才不会露黑条。 */
+    const r = st.getBoundingClientRect();
+    st.style.width  = Math.max(r.width  || 0, window.innerWidth  || 0) + 'px';
+    st.style.height = Math.max(r.height || 0, window.innerHeight || 0) + 'px';
+    T3.resize();
+  }
+}
+window.addEventListener('resize', onViewportChange);
+window.addEventListener('orientationchange', ()=>setTimeout(onViewportChange, 250));
+if(window.visualViewport){
+  window.visualViewport.addEventListener('resize', onViewportChange);
+}
+onViewportChange();
 /* 进游戏先把餐桌上的成品摆出来（存档里可能还有没尝完的） */
 setTimeout(()=>{ syncTableDishes(); }, 300);
 load();
