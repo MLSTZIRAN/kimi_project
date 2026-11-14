@@ -1,0 +1,1383 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>透镜侦探 · Liquid Detective</title>
+<style>
+:root {
+  --c-bg: #1a1a2e;
+  --c-bg-80: rgba(26,26,46,.8);
+  --c-bg-90: rgba(26,26,46,.9);
+  --c-border: rgba(110,200,255,.2);
+  --c-border-strong: rgba(110,200,255,.3);
+  --c-border-solid: rgba(110,200,255,.4);
+  --c-accent: #6ec8ff;
+  --c-accent-dim: #4a90a4;
+  --c-text: #8ab4c7;
+  --c-text-dim: #4a5a6a;
+  --c-green: #4ade80;
+  --c-gold: #fbbf24;
+  --c-red: #ef4444;
+  --c-hover: rgba(110,200,255,.1);
+  --c-hover-light: rgba(110,200,255,.05);
+  --font-mono: 'Courier New', monospace;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+html, body { height: 100%; overflow: hidden; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; user-select: none; }
+
+/* ===== SVG 通用 ===== */
+.clue-svg { width: 18px; height: 18px; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; fill: none; color: var(--c-accent); flex-shrink: 0; }
+.clue-svg.fill { fill: currentColor; stroke: none; }
+.clue-svg.sm { width: 14px; height: 14px; stroke-width: 2; }
+
+/* ===== Loading ===== */
+#loader { position: fixed; inset: 0; background: var(--c-bg); display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 9999; }
+#loader.hidden { display: none; }
+.loader-spinner { width: 56px; height: 56px; animation: spin 2s linear infinite; will-change: transform; }
+.loader-spinner-circle { fill: none; stroke: var(--c-accent); stroke-width: 4; stroke-linecap: round; stroke-dasharray: 1, 200; stroke-dashoffset: 0; animation: dash 1.5s cubic-bezier(.4,0,.2,1) infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+@keyframes dash {
+  0%   { stroke-dasharray: 1, 200; stroke-dashoffset: 0; }
+  50%  { stroke-dasharray: 90, 200; stroke-dashoffset: -35px; }
+  100% { stroke-dasharray: 90, 200; stroke-dashoffset: -124px; }
+}
+.loader-text { margin-top: 22px; color: var(--c-accent); font-size: 14px; letter-spacing: 4px; }
+
+/* ===== 菜单 ===== */
+#menu { position: fixed; inset: 0; background: var(--c-bg); display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 100; padding: 20px; transition: filter 1s ease-out; }
+#menu.hidden { visibility: hidden; pointer-events: none; }
+.game-title { font-size: 42px; color: var(--c-accent); letter-spacing: 8px; margin-bottom: 8px; text-shadow: 0 0 30px rgba(110,200,255,.3); }
+.game-subtitle { font-size: 13px; color: var(--c-accent-dim); letter-spacing: 6px; margin-bottom: 30px; }
+
+.menu-btn {
+  padding: 14px 48px; margin: 8px; background: transparent;
+  border: 1px solid var(--c-border-solid); color: var(--c-accent);
+  font-size: 14px; letter-spacing: 3px; cursor: pointer;
+  transition: all .3s; border-radius: 4px;
+}
+.menu-btn:hover { background: var(--c-hover); border-color: var(--c-accent); }
+.menu-btn.sm { margin-top: 24px; padding: 8px 20px; font-size: 12px; opacity: .6; letter-spacing: 2px; }
+
+.level-select {
+  display: flex; gap: 12px; margin-top: 10px;
+  flex-wrap: wrap; justify-content: center;
+  max-width: 700px; max-height: 62vh; overflow-y: auto; padding: 4px;
+  scrollbar-width: thin; scrollbar-color: rgba(110,200,255,.25) transparent;
+}
+.level-select::-webkit-scrollbar { width: 4px; }
+.level-select::-webkit-scrollbar-thumb { background: rgba(110,200,255,.25); border-radius: 2px; }
+
+.level-card {
+  width: 88px; height: 108px;
+  border: 1px solid var(--c-border); border-radius: 8px;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  cursor: pointer; transition: all .3s; position: relative; flex-shrink: 0;
+}
+.level-card:hover:not(.locked) { border-color: var(--c-accent); background: var(--c-hover-light); }
+.level-card.locked { opacity: .3; cursor: not-allowed; }
+.level-card.completed::after { content: "✓"; position: absolute; top: 8px; right: 8px; color: var(--c-green); font-size: 12px; }
+.level-num { font-size: 24px; color: var(--c-accent); font-weight: bold; }
+.level-name { font-size: 10.5px; color: var(--c-accent-dim); margin-top: 6px; text-align: center; padding: 0 4px; line-height: 1.3; }
+
+/* ===== 游戏 ===== */
+#game { position: fixed; inset: 0; visibility: hidden; pointer-events: none; transition: filter 1s ease-out; }
+#game.active { visibility: visible; pointer-events: all; }
+#menu.blur-in, #game.blur-in { filter: brightness(.3) contrast(.4) saturate(.15); }
+.fake-scene { position: fixed; inset: 0; pointer-events: none; }
+
+.hud { position: fixed; top: 0; left: 0; right: 0; padding: 16px 24px; display: flex; justify-content: space-between; align-items: center; z-index: 50; pointer-events: none; }
+.hud-left, .hud-right { display: flex; align-items: center; gap: 16px; pointer-events: all; }
+.hud-item, .hud-btn {
+  background: var(--c-bg-80); border: 1px solid var(--c-border);
+  padding: 8px 16px; border-radius: 4px; color: var(--c-accent);
+  font-size: 12px; letter-spacing: 1px;
+}
+.hud-btn { cursor: pointer; transition: all .3s; }
+.hud-btn:hover { border-color: var(--c-accent); background: var(--c-hover); }
+
+.panel-overlay { position: fixed; inset: 0; background: rgba(10,10,20,.45); z-index: 55; opacity: 0; pointer-events: none; transition: opacity .3s; }
+.panel-overlay.active { opacity: 1; pointer-events: all; }
+
+#clue-panel { position: fixed; right: -360px; top: 0; bottom: 0; width: 360px; background: rgba(26,26,46,.98); border-left: 1px solid var(--c-border); padding: 80px 24px 24px; transition: right .4s; z-index: 60; overflow-y: auto; }
+#clue-panel.open { right: 0; }
+.panel-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+.panel-title { color: var(--c-accent); font-size: 16px; letter-spacing: 3px; }
+.panel-close { color: var(--c-accent-dim); cursor: pointer; padding: 4px 8px; transition: color .3s; display: flex; align-items: center; }
+.panel-close:hover { color: var(--c-accent); }
+.panel-hint { color: var(--c-accent-dim); font-size: 11px; margin-bottom: 24px; letter-spacing: 1px; line-height: 1.6; }
+
+.clue-slot { padding: 16px; border: 1px dashed rgba(110,200,255,.15); border-radius: 6px; margin-bottom: 12px; min-height: 60px; display: flex; align-items: center; gap: 12px; }
+.clue-slot.found { border-style: solid; border-color: var(--c-border-strong); background: var(--c-hover-light); }
+.clue-order { width: 28px; height: 28px; border-radius: 50%; background: rgba(110,200,255,.1); display: flex; align-items: center; justify-content: center; color: var(--c-accent-dim); font-size: 12px; font-weight: bold; flex-shrink: 0; }
+.clue-slot.found .clue-order { background: var(--c-border-strong); color: var(--c-accent); }
+.clue-icon { width: 36px; height: 36px; border-radius: 50%; background: rgba(110,200,255,.1); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.clue-text { color: var(--c-text); font-size: 12px; line-height: 1.6; }
+.clue-slot:not(.found) .clue-text { color: var(--c-text-dim); }
+
+/* ===== 密码面板 ===== */
+.code-display {
+  position: fixed; bottom: 32px; left: 50%; transform: translateX(-50%);
+  background: var(--c-bg-90); border: 1px solid var(--c-border-strong);
+  border-radius: 8px; overflow: hidden; z-index: 50;
+  transition: width .35s cubic-bezier(.4,0,.2,1), height .35s cubic-bezier(.4,0,.2,1), border-radius .35s cubic-bezier(.4,0,.2,1);
+}
+.code-display-inner { display: flex; gap: 8px; align-items: center; padding: 16px 20px; white-space: nowrap; transition: opacity .2s ease .1s, transform .3s cubic-bezier(.4,0,.2,1) .05s; }
+.code-display.collapsed .code-display-inner { opacity: 0; transform: scale(.7); pointer-events: none; transition: opacity .15s ease, transform .2s cubic-bezier(.4,0,.2,1); }
+.code-display.collapsed { width: 52px; height: 52px; border-radius: 26px; cursor: pointer; }
+.code-expand-btn { position: absolute; inset: 0; background: transparent; border: none; color: var(--c-accent); cursor: pointer; display: flex; align-items: center; justify-content: center; opacity: 0; pointer-events: none; transition: opacity .2s ease; z-index: 3; }
+.code-expand-btn .clue-svg { width: 22px; height: 22px; }
+.code-display.collapsed .code-expand-btn { opacity: 1; pointer-events: all; transition: opacity .25s ease .1s; }
+.code-inputs { display: flex; gap: 8px; }
+.code-char {
+  width: 44px; height: 52px;
+  background: rgba(110,200,255,.05); border: 1px solid var(--c-border);
+  border-radius: 4px; color: var(--c-accent);
+  font-size: 24px; font-weight: bold; font-family: var(--font-mono);
+  text-align: center; text-transform: uppercase; outline: none; caret-color: var(--c-accent); transition: all .2s;
+}
+.code-char:focus { border-color: var(--c-accent); background: rgba(110,200,255,.12); box-shadow: 0 0 12px rgba(110,200,255,.35); }
+.code-char.filled { border-color: var(--c-accent); background: rgba(110,200,255,.15); text-shadow: 0 0 10px rgba(110,200,255,.5); }
+.code-submit-btn {
+  margin-left: 8px; padding: 12px 24px;
+  background: rgba(110,200,255,.15); border: 1px solid var(--c-accent);
+  color: var(--c-accent); border-radius: 4px; cursor: pointer;
+  font-size: 13px; letter-spacing: 2px; white-space: nowrap; transition: all .2s;
+}
+.code-submit-btn:hover:not(:disabled) { background: rgba(110,200,255,.25); }
+.code-submit-btn:disabled { opacity: .3; cursor: not-allowed; }
+.code-toggle-btn { background: transparent; border: none; color: var(--c-accent); font-size: 16px; cursor: pointer; padding: 4px 6px; border-radius: 4px; line-height: 1; flex-shrink: 0; opacity: .7; transition: opacity .2s; }
+.code-toggle-btn:hover { opacity: 1; }
+@keyframes shake {
+  0%, 100% { transform: translateX(-50%); }
+  25%      { transform: translateX(calc(-50% - 6px)); }
+  75%      { transform: translateX(calc(-50% + 6px)); }
+}
+.code-display.shake { animation: shake .4s; }
+
+/* ===== 过场 ===== */
+#pageVeil {
+  position: fixed;
+  left: var(--veil-x, 50%); top: var(--veil-y, 50%);
+  width: 100vmax; height: 100vmax;
+  pointer-events: none; visibility: hidden; z-index: 10000;
+  border-radius: 50%;
+  background: radial-gradient(circle at center,
+    #14223d 0%, #0a1220 40%, #05080f 76%,
+    #1e3a6a 79%, #3a6aae 80%, #1e3a6a 81%, #020408 83%, #020408 100%);
+  transform: translate(-50%, -50%) scale(.001);
+  transform-origin: 50% 50%;
+  opacity: 1;
+  will-change: transform, opacity;
+  transition: transform .3s cubic-bezier(.16,1,.3,1), opacity .3s ease;
+}
+#pageVeil.active { visibility: visible; }
+#pageVeil.fade { opacity: 0; }
+
+/* ===== 通关面板 ===== */
+#victory {
+  position: fixed; inset: 0; background: rgba(26,26,46,.95);
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  z-index: 200; opacity: 0; pointer-events: none; transition: opacity .35s;
+}
+#victory.show { opacity: 1; pointer-events: all; }
+#victory > * {
+  opacity: 0; transform: translateY(26px);
+  transition: opacity .5s ease, transform .55s cubic-bezier(.34,1.56,.64,1);
+}
+#victory.show > * { opacity: 1; transform: translateY(0); }
+#victory.show > *:nth-child(1) { transition-delay: .08s; }
+#victory.show > *:nth-child(2) { transition-delay: .2s; }
+#victory.show > *:nth-child(3) { transition-delay: .32s; }
+#victory.show > *:nth-child(4) { transition-delay: .4s; }
+.victory-title { font-size: 36px; color: var(--c-green); letter-spacing: 6px; margin-bottom: 16px; text-shadow: 0 0 30px rgba(74,222,128,.4); }
+.victory-stats { color: var(--c-text); font-size: 14px; margin-bottom: 40px; line-height: 2; text-align: center; }
+
+/* ===== 结算 ===== */
+#finale {
+  position: fixed; inset: 0;
+  background: radial-gradient(circle at 50% 30%, rgba(30,42,70,.98), rgba(12,12,22,.99));
+  display: flex; align-items: center; justify-content: center;
+  z-index: 250; opacity: 0; pointer-events: none;
+  transition: opacity .4s ease;
+  padding: 24px; overflow: hidden;
+}
+#finale.show { opacity: 1; pointer-events: all; }
+
+.finale-ambient { position: absolute; inset: 0; pointer-events: none; overflow: hidden; }
+.finale-ambient::before {
+  content: ''; position: absolute; top: 30%; left: 50%;
+  width: 140vmax; height: 140vmax; margin: -70vmax 0 0 -70vmax;
+  border-radius: 50%;
+  background: repeating-radial-gradient(circle at center, transparent 0, transparent 60px, rgba(110,200,255,.025) 60px, rgba(110,200,255,.025) 61px);
+  animation: ambientSpin 80s linear infinite;
+  opacity: 0; transition: opacity 1.2s ease .2s;
+}
+#finale.show .finale-ambient::before { opacity: 1; }
+@keyframes ambientSpin { to { transform: rotate(360deg); } }
+
+.finale-inner {
+  position: relative; max-width: 580px; width: 100%;
+  max-height: calc(100vh - 48px); overflow-y: auto; text-align: center;
+  display: flex; flex-direction: column; align-items: center; padding: 24px 16px;
+  scrollbar-width: thin; scrollbar-color: rgba(110,200,255,.25) transparent;
+}
+.finale-inner::-webkit-scrollbar { width: 4px; }
+.finale-inner::-webkit-scrollbar-thumb { background: rgba(110,200,255,.25); border-radius: 2px; }
+
+/* ===== 徽章：SVG 刻度环 ===== */
+.finale-badge {
+  position: relative; width: 110px; height: 110px; margin-bottom: 24px;
+  opacity: 0; transform: scale(.3) rotate(-120deg);
+  transition: opacity .55s ease, transform .8s cubic-bezier(.34,1.56,.64,1);
+}
+#finale.show .finale-badge { opacity: 1; transform: scale(1) rotate(0deg); transition-delay: .1s; }
+.badge-glow {
+  position: absolute; inset: -16px; border-radius: 50%;
+  background: radial-gradient(circle, rgba(74,222,128,.28), transparent 65%);
+  filter: blur(6px);
+  animation: badgeGlowPulse 2.6s ease-in-out infinite;
+}
+@keyframes badgeGlowPulse {
+  0%, 100% { opacity: .6; transform: scale(1); }
+  50%      { opacity: 1; transform: scale(1.08); }
+}
+/* SVG 刻度环：30 段等长刻度，沿切线方向排列 */
+.badge-ring {
+  position: absolute; inset: 0;
+  width: 100%; height: 100%;
+  color: var(--c-green);
+  animation: badgeSpin 20s linear infinite;
+  transform-origin: 50% 50%;
+}
+@keyframes badgeSpin { to { transform: rotate(360deg); } }
+
+.badge-core {
+  position: absolute; inset: 8px; border-radius: 50%;
+  background: radial-gradient(circle, rgba(74,222,128,.25), rgba(74,222,128,.03));
+  border: 2px solid var(--c-green);
+  display: flex; align-items: center; justify-content: center;
+  color: var(--c-green);
+  box-shadow: 0 0 40px rgba(74,222,128,.4), inset 0 0 24px rgba(74,222,128,.15);
+}
+.badge-core .clue-svg { width: 42px; height: 42px; stroke-width: 2.4; }
+
+.finale-title {
+  font-size: 32px; color: #e8f4ff; letter-spacing: 8px; margin-bottom: 6px;
+  text-shadow: 0 0 30px rgba(110,200,255,.45);
+  opacity: 0; transform: translateY(20px);
+  transition: opacity .6s ease, transform .7s cubic-bezier(.22,1,.36,1);
+}
+#finale.show .finale-title { opacity: 1; transform: translateY(0); transition-delay: .32s; }
+
+.finale-scanner {
+  width: 0; height: 1px;
+  background: linear-gradient(90deg, transparent, var(--c-green), transparent);
+  box-shadow: 0 0 10px rgba(74,222,128,.7);
+  margin: 6px 0 14px; opacity: 0;
+}
+#finale.show .finale-scanner { animation: scannerExpand .9s ease-out .5s forwards; }
+@keyframes scannerExpand {
+  0%   { width: 0; opacity: 0; }
+  40%  { opacity: 1; }
+  100% { width: 140px; opacity: .8; }
+}
+
+.finale-subtitle {
+  font-size: 11px; color: var(--c-accent-dim); letter-spacing: 5px; margin-bottom: 28px;
+  opacity: 0; transform: translateY(10px);
+  transition: opacity .5s ease, transform .6s ease, color .4s;
+}
+#finale.show .finale-subtitle { opacity: 1; transform: translateY(0); transition-delay: .6s; }
+.finale-subtitle.perfect {
+  color: var(--c-gold);
+  text-shadow: 0 0 16px rgba(251,191,36,.7);
+  animation: perfectGlow 2s ease-in-out infinite;
+}
+@keyframes perfectGlow {
+  0%, 100% { text-shadow: 0 0 16px rgba(251,191,36,.5); }
+  50%      { text-shadow: 0 0 28px rgba(251,191,36,.9); }
+}
+
+.finale-summary { display: flex; gap: 12px; margin-bottom: 22px; flex-wrap: wrap; justify-content: center; }
+.finale-stat {
+  background: rgba(110,200,255,.06);
+  border: 1px solid var(--c-border);
+  border-radius: 8px; padding: 14px 22px; min-width: 104px;
+  display: flex; flex-direction: column; align-items: center; gap: 6px;
+  opacity: 0; transform: translateY(24px) scale(.94);
+  transition: opacity .5s ease, transform .6s cubic-bezier(.34,1.56,.64,1), border-color .3s, background .3s;
+}
+#finale.show .finale-stat {
+  opacity: 1; transform: translateY(0) scale(1);
+  transition-delay: calc(.72s + var(--i, 0) * .08s);
+}
+.finale-stat:hover { border-color: rgba(110,200,255,.5); background: var(--c-hover); }
+.finale-stat-num {
+  font-size: 24px; color: var(--c-accent); font-weight: bold;
+  font-variant-numeric: tabular-nums;
+  text-shadow: 0 0 12px rgba(110,200,255,.4);
+}
+.finale-stat-label { font-size: 11px; color: var(--c-accent-dim); letter-spacing: 1px; }
+
+.finale-list {
+  width: 100%; max-height: 32vh; overflow-y: auto;
+  background: rgba(15,15,30,.55);
+  border: 1px solid rgba(110,200,255,.14);
+  border-radius: 8px; padding: 6px; margin-bottom: 22px;
+  scrollbar-width: thin; scrollbar-color: rgba(110,200,255,.25) transparent;
+}
+.finale-list::-webkit-scrollbar { width: 4px; }
+.finale-list::-webkit-scrollbar-thumb { background: rgba(110,200,255,.25); border-radius: 2px; }
+
+.finale-row {
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 12px; border-radius: 4px;
+  font-size: 12px; color: var(--c-text);
+  border-bottom: 1px solid rgba(110,200,255,.06);
+  opacity: 0; transform: translateX(30px);
+  transition: opacity .45s ease, transform .55s cubic-bezier(.22,1,.36,1);
+}
+#finale.show .finale-row {
+  opacity: 1; transform: translateX(0);
+  transition-delay: calc(.98s + var(--i, 0) * .04s);
+}
+.finale-row:last-child { border-bottom: none; }
+.row-name { color: #a8d8ff; letter-spacing: 1px; text-align: left; flex-shrink: 0; min-width: 84px; }
+.row-meta { display: flex; gap: 14px; margin-left: auto; font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+.row-time { color: var(--c-accent); min-width: 44px; text-align: right; }
+.row-clues { color: var(--c-accent-dim); min-width: 30px; text-align: right; }
+.row-clues.perfect { color: var(--c-gold); }
+
+.mini-bar { flex: 1; height: 3px; background: rgba(110,200,255,.1); border-radius: 2px; overflow: hidden; min-width: 30px; max-width: 70px; }
+.mini-fill {
+  height: 100%; width: 0; border-radius: 2px;
+  background: linear-gradient(90deg, rgba(110,200,255,.4), var(--c-accent));
+  transition: width .7s cubic-bezier(.34,1.2,.64,1);
+}
+#finale.show .mini-fill {
+  width: var(--pct, 0%);
+  transition-delay: calc(1.18s + var(--i, 0) * .04s);
+}
+.mini-fill.perfect { background: linear-gradient(90deg, rgba(251,191,36,.5), var(--c-gold)); box-shadow: 0 0 6px rgba(251,191,36,.5); }
+
+.finale-hint {
+  color: var(--c-accent); font-size: 12px; letter-spacing: 4px; margin-bottom: 14px; text-align: center;
+  opacity: 0; transform: translateY(20px);
+  text-shadow: 0 0 12px rgba(110,200,255,.35);
+  transition: opacity .5s ease, transform .6s cubic-bezier(.34,1.56,.64,1);
+}
+#finale.show .finale-hint { opacity: 1; transform: translateY(0); transition-delay: 1.4s; }
+
+.finale-actions { display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; }
+.finale-actions .menu-btn {
+  opacity: 0; transform: translateY(20px) scale(.9);
+  transition: opacity .5s ease, transform .6s cubic-bezier(.34,1.56,.64,1);
+}
+#finale.show .finale-actions .menu-btn { opacity: 1; transform: translateY(0) scale(1); }
+#finale.show .finale-actions .menu-btn:nth-child(1) { transition-delay: 1.5s; }
+#finale.show .finale-actions .menu-btn:nth-child(2) { transition-delay: 1.6s; }
+
+/* PERFECT 金色主题 */
+#finale.perfect .badge-glow { background: radial-gradient(circle, rgba(251,191,36,.32), transparent 65%); }
+#finale.perfect .badge-ring { color: var(--c-gold); }
+#finale.perfect .badge-core {
+  color: var(--c-gold); border-color: var(--c-gold);
+  background: radial-gradient(circle, rgba(251,191,36,.28), rgba(251,191,36,.03));
+  box-shadow: 0 0 48px rgba(251,191,36,.55), inset 0 0 24px rgba(251,191,36,.2);
+}
+#finale.perfect .finale-scanner { background: linear-gradient(90deg, transparent, var(--c-gold), transparent); box-shadow: 0 0 10px rgba(251,191,36,.7); }
+#finale.perfect .finale-title { color: #fffbeb; text-shadow: 0 0 30px rgba(251,191,36,.5); }
+#finale.perfect .finale-stat { border-color: rgba(251,191,36,.3); }
+#finale.perfect .finale-stat:hover { border-color: rgba(251,191,36,.6); background: rgba(251,191,36,.08); }
+#finale.perfect .finale-stat-num { color: var(--c-gold); text-shadow: 0 0 12px rgba(251,191,36,.45); }
+
+/* ===== Toast ===== */
+.toast {
+  position: fixed; top: 80px; left: 50%; transform: translateX(-50%) translateY(-20px);
+  background: var(--c-bg-90); border: 1px solid var(--c-border-strong);
+  padding: 12px 28px; border-radius: 4px;
+  color: var(--c-accent); font-size: 13px; letter-spacing: 1px;
+  opacity: 0; transition: all .3s; z-index: 70; pointer-events: none;
+  max-width: 90vw; text-align: center;
+}
+.toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+.toast.error { border-color: var(--c-red); color: var(--c-red); }
+
+/* ===== 透镜 & 扫描线 ===== */
+liquid-lens { position: fixed; inset: 0; height: 100vh; width: 100vw; touch-action: none; cursor: grab; }
+liquid-lens:active { cursor: grabbing; }
+#lensContent { position: absolute; inset: 0; width: 100%; height: 100%; overflow: hidden; pointer-events: none; }
+
+.scanline {
+  position: fixed; inset: 0; pointer-events: none; z-index: 30;
+  background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(110,200,255,.015) 2px, rgba(110,200,255,.015) 4px);
+}
+
+/* ===== 响应式 ===== */
+@media (max-width: 560px) {
+  .code-char { width: 36px; height: 44px; font-size: 18px; }
+  .code-inputs { gap: 5px; }
+  .code-display-inner { padding: 10px 12px; }
+  .code-submit-btn { margin-left: 6px; padding: 10px 12px; font-size: 12px; }
+  .finale-title { font-size: 26px; letter-spacing: 5px; }
+  .finale-stat { padding: 12px 16px; min-width: 88px; }
+  .finale-stat-num { font-size: 20px; }
+  .finale-badge { width: 92px; height: 92px; }
+  .badge-core .clue-svg { width: 34px; height: 34px; }
+}
+
+@media (max-height: 520px) {
+  .hud { padding: 8px 16px; }
+  .hud-left, .hud-right { gap: 10px; }
+  .hud-item, .hud-btn { padding: 6px 12px; font-size: 11px; }
+
+  .code-display { bottom: 12px; }
+  .code-display-inner { padding: 8px 12px; gap: 6px; }
+  .code-char { width: 32px; height: 38px; font-size: 16px; }
+  .code-inputs { gap: 4px; }
+  .code-submit-btn { margin-left: 4px; padding: 8px 12px; font-size: 11px; letter-spacing: 1px; }
+  .code-toggle-btn { padding: 2px 4px; font-size: 14px; }
+  .code-display.collapsed { width: 44px; height: 44px; border-radius: 22px; }
+
+  #clue-panel { width: 300px; padding: 56px 16px 16px; }
+  .panel-title { font-size: 14px; }
+  .panel-hint { margin-bottom: 12px; font-size: 10px; }
+  .clue-slot { padding: 10px; min-height: 48px; margin-bottom: 8px; gap: 8px; }
+  .clue-order { width: 24px; height: 24px; font-size: 11px; }
+  .clue-icon { width: 30px; height: 30px; }
+  .clue-svg { width: 15px; height: 15px; }
+  .clue-text { font-size: 11px; }
+
+  .game-title { font-size: 32px; letter-spacing: 6px; }
+  .game-subtitle { font-size: 11px; letter-spacing: 4px; margin-bottom: 20px; }
+  .level-select { gap: 8px; max-height: 50vh; max-width: 620px; }
+  .level-card { width: 72px; height: 88px; }
+  .level-num { font-size: 18px; }
+  .level-name { font-size: 9.5px; margin-top: 4px; }
+  .menu-btn { padding: 10px 32px; font-size: 12px; letter-spacing: 2px; }
+
+  .toast { top: 50px; padding: 8px 20px; font-size: 12px; }
+
+  .victory-title { font-size: 28px; letter-spacing: 4px; margin-bottom: 12px; }
+  .victory-stats { font-size: 12px; margin-bottom: 24px; line-height: 1.7; }
+
+  .finale-inner { max-width: 760px; padding: 12px; }
+  .finale-badge { width: 64px; height: 64px; margin-bottom: 12px; }
+  .badge-core { inset: 4px; }
+  .badge-core .clue-svg { width: 26px; height: 26px; }
+  .badge-glow { inset: -8px; filter: blur(4px); }
+  .finale-title { font-size: 22px; letter-spacing: 4px; margin-bottom: 2px; }
+  .finale-scanner { margin: 4px 0 8px; }
+  .finale-subtitle { font-size: 10px; letter-spacing: 3px; margin-bottom: 14px; }
+  .finale-summary { gap: 8px; margin-bottom: 12px; }
+  .finale-stat { padding: 8px 14px; min-width: 84px; gap: 3px; }
+  .finale-stat-num { font-size: 18px; }
+  .finale-stat-label { font-size: 10px; }
+  .finale-list { max-height: 22vh; margin-bottom: 12px; }
+  .finale-row { padding: 6px 10px; font-size: 11px; }
+  .finale-hint { font-size: 11px; letter-spacing: 3px; margin-bottom: 8px; }
+}
+</style>
+</head>
+<body>
+
+<svg xmlns="http://www.w3.org/2000/svg" style="position:absolute;width:0;height:0;overflow:hidden" aria-hidden="true">
+<symbol id="ic-key" viewBox="0 0 24 24"><circle cx="8" cy="15" r="3.5"/><path d="M11 13l9-9M17 6l3 3M14 9l2 2"/></symbol>
+<symbol id="ic-x" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6l-12 12"/></symbol>
+<symbol id="ic-check" viewBox="0 0 24 24"><path d="M5 12l4 5 10-12"/></symbol>
+<symbol id="ic-frame" viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="1.5"/><rect x="8" y="8" width="8" height="8"/></symbol>
+<symbol id="ic-bulb" viewBox="0 0 24 24"><path d="M9 17h6M10 20h4M12 3a5 5 0 0 1 5 5c0 2-1 3-2 4v2H9v-2c-1-1-2-2-2-4a5 5 0 0 1 5-5z"/></symbol>
+<symbol id="ic-book" viewBox="0 0 24 24"><path d="M4 5v14a2 2 0 0 1 2-2h12V5H6a2 2 0 0 0-2 2zM4 19a2 2 0 0 1 2-2h12M8 9h6M8 12h6"/></symbol>
+<symbol id="ic-cup" viewBox="0 0 24 24"><path d="M5 8h11v7a4 4 0 0 1-4 4H9a4 4 0 0 1-4-4V8zM16 10h2a2 2 0 0 1 0 4h-2"/></symbol>
+<symbol id="ic-wood" viewBox="0 0 24 24"><path d="M4 8h16M4 12h16M4 16h16M8 8c2 4 2 4 0 8M14 8c-2 4-2 4 0 8"/></symbol>
+<symbol id="ic-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="6"/><path d="M16 16l4 4"/></symbol>
+<symbol id="ic-flask" viewBox="0 0 24 24"><path d="M9 3h6M10 3v6l-5 9a2 2 0 0 0 2 3h10a2 2 0 0 0 2-3l-5-9V3"/></symbol>
+<symbol id="ic-microscope" viewBox="0 0 24 24"><path d="M9 5l3 3M6 20h12M9 17h6M11 8l3-3M12 11l-3 6"/><circle cx="15" cy="13" r="3"/></symbol>
+<symbol id="ic-still" viewBox="0 0 24 24"><path d="M9 3h6l-2 8h2l-2 8H9l2-8H9l2-8z"/></symbol>
+<symbol id="ic-chart" viewBox="0 0 24 24"><path d="M4 4v16h16M8 16v-4M12 16v-8M16 16v-6"/></symbol>
+<symbol id="ic-dna" viewBox="0 0 24 24"><path d="M8 4c0 4 8 4 8 8s-8 4-8 8M16 4c0 4-8 4-8 8s8 4 8 8"/></symbol>
+<symbol id="ic-hash" viewBox="0 0 24 24"><path d="M8 4l-2 16M18 4l-2 16M4 9h16M4 15h16"/></symbol>
+<symbol id="ic-door" viewBox="0 0 24 24"><path d="M5 3h14v18H5zM12 3v18M14.5 12h.01"/></symbol>
+<symbol id="ic-dotred" viewBox="0 0 24 24"><circle cx="12" cy="12" r="6"/></symbol>
+<symbol id="ic-dotgreen" viewBox="0 0 24 24"><circle cx="12" cy="12" r="6"/></symbol>
+<symbol id="ic-wind" viewBox="0 0 24 24"><path d="M3 8h12a3 3 0 1 0-3-3M3 12h15a3 3 0 1 1-3 3M3 16h9a2 2 0 1 1-2 2"/></symbol>
+<symbol id="ic-box" viewBox="0 0 24 24"><path d="M3 7l9-4 9 4v10l-9 4-9-4V7zM3 7l9 4 9-4M12 11v10"/></symbol>
+<symbol id="ic-wine" viewBox="0 0 24 24"><path d="M8 4h8l-1 6a3 3 0 0 1-6 0L8 4zM12 13v6M9 19h6"/></symbol>
+<symbol id="ic-column" viewBox="0 0 24 24"><path d="M4 4h16M4 20h16M6 4v16M18 4v16M9 8h6M9 12h6M9 16h6"/></symbol>
+<symbol id="ic-hammer" viewBox="0 0 24 24"><path d="M14 5l5 5-3 3-5-5zM11 8L4 15l3 3 7-7"/></symbol>
+<symbol id="ic-web" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><path d="M12 4v16M4 12h16M6.4 6.4l11.2 11.2M17.6 6.4L6.4 17.6"/></symbol>
+<symbol id="ic-books" viewBox="0 0 24 24"><path d="M3 5v14h7V5H3zM10 5v14h7V5h-7zM17 7l4 1v11l-4-1"/></symbol>
+<symbol id="ic-chair" viewBox="0 0 24 24"><path d="M6 12V6a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v6M6 12h12M6 12v6M18 12v6"/></symbol>
+<symbol id="ic-map" viewBox="0 0 24 24"><path d="M3 6l6-2 6 2 6-2v14l-6 2-6-2-6 2V6zM9 4v14M15 6v14"/></symbol>
+<symbol id="ic-bookmark" viewBox="0 0 24 24"><path d="M6 3h12v18l-6-4-6 4V3z"/></symbol>
+<symbol id="ic-antenna" viewBox="0 0 24 24"><path d="M12 20V8M8 4a6 6 0 0 1 8 0M10 6a3 3 0 0 1 4 0M9 20h6"/></symbol>
+<symbol id="ic-oil" viewBox="0 0 24 24"><path d="M5 8h14v12H5zM8 8V5h8v3M9 12h6M9 16h6"/></symbol>
+<symbol id="ic-brick" viewBox="0 0 24 24"><path d="M3 6h18v12H3zM3 10h18M3 14h18M9 6v4M15 10v4M9 14v4"/></symbol>
+<symbol id="ic-satellite" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M5 5l3 3M16 16l3 3M5 19l3-3M16 8l3-3M9 9l6 6"/></symbol>
+<symbol id="ic-sparkle" viewBox="0 0 24 24"><path d="M12 3v4M12 17v4M3 12h4M17 12h4M6 6l2 2M16 16l2 2M6 18l2-2M16 8l2-2"/></symbol>
+<symbol id="ic-bed" viewBox="0 0 24 24"><path d="M3 18V8M3 14h18V18M3 18h18M7 10h4v4H7zM15 10h4v4h-4z"/></symbol>
+<symbol id="ic-stethoscope" viewBox="0 0 24 24"><path d="M5 4v6a4 4 0 0 0 8 0V4M8 14a4 4 0 0 0 4 4h4a3 3 0 0 0 3-3v-2"/><circle cx="19" cy="12" r="2"/></symbol>
+<symbol id="ic-syringe" viewBox="0 0 24 24"><path d="M17 3l4 4M14 6l4 4M9 11l-5 5-1 4 4-1 5-5M9 11l4 4M15 7l-4 4M11 9l-2 2"/></symbol>
+<symbol id="ic-ambulance" viewBox="0 0 24 24"><path d="M3 8h11v8H3zM14 10h4l3 3v3h-7M5 18h2M15 18h2M8 11v3M6.5 12.5h3"/><circle cx="7" cy="19" r="2"/><circle cx="17" cy="19" r="2"/></symbol>
+<symbol id="ic-clipboard" viewBox="0 0 24 24"><path d="M8 4h8v3H8zM5 5h4v4h6V5h4v15H5V5zM8 12h8M8 16h5"/></symbol>
+<symbol id="ic-flashlight" viewBox="0 0 24 24"><path d="M8 3h8l-2 6v12h-4V9L8 3zM10 9h4"/></symbol>
+<symbol id="ic-gauge" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><path d="M12 12l4-4M12 12v3"/></symbol>
+<symbol id="ic-window" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><path d="M4 12h16M12 4v16"/></symbol>
+<symbol id="ic-joystick" viewBox="0 0 24 24"><circle cx="12" cy="14" r="4"/><path d="M12 10V4M10 4h4"/></symbol>
+<symbol id="ic-rocket" viewBox="0 0 24 24"><path d="M12 3c3 2 4 6 4 10l-2 4h-4l-2-4c0-4 1-8 4-10zM8 17l-2 4M16 17l2 4M10 13h4"/><circle cx="12" cy="9" r="1.5"/></symbol>
+<symbol id="ic-telescope" viewBox="0 0 24 24"><path d="M3 12l16-6-2 5-14 5-2-4zM12 12v8M8 22h8"/></symbol>
+<symbol id="ic-anchor" viewBox="0 0 24 24"><circle cx="12" cy="5" r="2"/><path d="M12 7v13M6 12h12M4 15a8 8 0 0 0 16 0"/></symbol>
+<symbol id="ic-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><path d="M12 8v4l2 2"/></symbol>
+<symbol id="ic-gear" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 3v3M12 18v3M3 12h3M18 12h3M6 6l2 2M16 16l2 2M6 18l2-2M16 8l2-2"/></symbol>
+<symbol id="ic-pendulum" viewBox="0 0 24 24"><path d="M12 3v14"/><circle cx="12" cy="20" r="3"/></symbol>
+<symbol id="ic-stairs" viewBox="0 0 24 24"><path d="M3 20h4v-4h4v-4h4V8h4V4"/></symbol>
+<symbol id="ic-curtain" viewBox="0 0 24 24"><path d="M3 3h18v18M6 3v6c0 3 2 6 6 6M18 3v6c0 3-2 6-6 6M6 9h12"/></symbol>
+<symbol id="ic-seat" viewBox="0 0 24 24"><path d="M6 4h12v10H6zM6 14v6M18 14v6M6 10h12"/></symbol>
+<symbol id="ic-mirror" viewBox="0 0 24 24"><ellipse cx="12" cy="10" rx="6" ry="7"/><path d="M12 17v4M9 21h6"/></symbol>
+<symbol id="ic-stage" viewBox="0 0 24 24"><path d="M3 6h18v3H3zM5 9v9h14V9M8 12h8M8 15h5"/></symbol>
+<symbol id="ic-pot" viewBox="0 0 24 24"><path d="M6 10h12l-1 10H7L6 10zM8 10V7c0-1 1-2 2-2h4c1 0 2 1 2 2v3"/></symbol>
+<symbol id="ic-watering" viewBox="0 0 24 24"><path d="M3 12h12v6H3zM3 14l-1-4h4M15 14h3l3 3v3h-6M7 12V8h6v4"/></symbol>
+<symbol id="ic-vine" viewBox="0 0 24 24"><path d="M12 3v18M12 7c-3 0-4 2-4 3M12 11c3 0 4 2 4 3M12 15c-3 0-4 2-4 3"/></symbol>
+<symbol id="ic-glassroof" viewBox="0 0 24 24"><path d="M3 12L12 4l9 8M5 12v8h14v-8M9 12v8M15 12v8M5 16h14"/></symbol>
+<symbol id="ic-toolrack" viewBox="0 0 24 24"><path d="M3 6h18M5 6v14M19 6v14M8 10v4M12 8v8M16 10v4"/></symbol>
+<symbol id="ic-sink" viewBox="0 0 24 24"><path d="M3 10h18v4H3zM6 14v6M18 14v6M9 6a2 2 0 0 1 4 0v4"/></symbol>
+<symbol id="ic-lens" viewBox="0 0 24 24"><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></symbol>
+<symbol id="ic-starmap" viewBox="0 0 24 24"><path d="M3 3h18v18H3zM7 8l2 2M16 6v2M9 16l2-2M16 14l2 2M7 12l3 1M12 20v-3"/></symbol>
+<symbol id="ic-dome" viewBox="0 0 24 24"><path d="M3 20V13a9 9 0 0 1 18 0v7M7 20v-6M17 20v-6"/></symbol>
+<symbol id="ic-console" viewBox="0 0 24 24"><rect x="3" y="6" width="18" height="12" rx="2"/><circle cx="8" cy="12" r="1.5"/><path d="M13 11h5M13 14h3"/></symbol>
+<symbol id="ic-log" viewBox="0 0 24 24"><path d="M6 3h9l5 5v13H6V3zM15 3v5h5M9 12h6M9 16h6"/></symbol>
+</svg>
+
+<div id="loader">
+  <svg class="loader-spinner" viewBox="0 0 48 48"><circle class="loader-spinner-circle" cx="24" cy="24" r="20"/></svg>
+  <div class="loader-text">LOADING</div>
+</div>
+
+<div id="menu">
+  <div class="game-title">透镜侦探</div>
+  <div class="game-subtitle">LIQUID DETECTIVE</div>
+  <div class="level-select" id="levelSelect"></div>
+  <button class="menu-btn sm" onclick="game.resetProgress()">重置进度</button>
+</div>
+
+<div id="game">
+  <div class="scanline"></div>
+
+  <div class="hud">
+    <div class="hud-left">
+      <div class="hud-item" id="levelDisplay">关卡 1</div>
+      <div class="hud-item" id="timer">00:00</div>
+    </div>
+    <div class="hud-right">
+      <button class="hud-btn" onclick="game.toggleClues()">线索面板</button>
+      <button class="hud-btn" onclick="game.exitToMenu(event)">退出</button>
+    </div>
+  </div>
+
+  <div class="fake-scene" id="fakeScene"></div>
+  <div class="panel-overlay" id="panelOverlay" onclick="game.toggleClues()"></div>
+
+  <div id="clue-panel">
+    <div class="panel-header">
+      <div class="panel-title">已收集线索</div>
+      <div class="panel-close" onclick="game.toggleClues()"><svg class="clue-svg sm"><use href="#ic-x"/></svg></div>
+    </div>
+    <div class="panel-hint">编号即密码顺序，按 1 → N 把字符填进密码框</div>
+    <div id="clueList"></div>
+  </div>
+
+  <div class="code-display" id="codeDisplay">
+    <div class="code-display-inner">
+      <button class="code-toggle-btn" id="codeToggleBtn" onclick="event.stopPropagation(); game.toggleCodePanel()" title="收起密码面板">▾</button>
+      <div class="code-inputs" id="codeInputs"></div>
+      <button class="code-submit-btn" id="submitBtn" onclick="game.checkCode()" disabled>确认密码</button>
+    </div>
+    <button class="code-expand-btn" id="codeExpandBtn" onclick="event.stopPropagation(); game.toggleCodePanel()" title="展开密码面板">
+      <svg class="clue-svg"><use href="#ic-key"/></svg>
+    </button>
+  </div>
+
+  <div id="victory">
+    <div class="victory-title">调查完成</div>
+    <div class="victory-stats" id="victoryStats"></div>
+    <button class="menu-btn" onclick="game.nextLevel(event)">下一关</button>
+    <button class="menu-btn" style="font-size:12px;opacity:.6;" onclick="game.exitToMenu(event)">返回菜单</button>
+  </div>
+
+  <div id="finale">
+    <div class="finale-ambient"></div>
+    <div class="finale-inner">
+      <div class="finale-badge">
+        <div class="badge-glow"></div>
+        <svg class="badge-ring" viewBox="0 0 100 100" aria-hidden="true">
+          <circle cx="50" cy="50" r="46" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-dasharray="2 7.6"/>
+        </svg>
+        <div class="badge-core"><svg class="clue-svg"><use href="#ic-check"/></svg></div>
+      </div>
+      <div class="finale-title">全部案件告破</div>
+      <div class="finale-scanner"></div>
+      <div class="finale-subtitle" id="finaleSubtitle">CASE CLOSED · ALL CLEARED</div>
+      <div class="finale-summary" id="finaleSummary"></div>
+      <div class="finale-list" id="finaleList"></div>
+      <div class="finale-hint">还想更快？</div>
+      <div class="finale-actions">
+        <button class="menu-btn" onclick="game.restartAll(event)">再来一次</button>
+        <button class="menu-btn" style="opacity:.75;font-size:12px;" onclick="game.exitToMenu(event)">返回菜单</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+</div>
+
+<div id="pageVeil"></div>
+
+<script>
+const LEVELS = [
+  { id: 1, name: "书房迷案", code: "7A4B9C", hint: "拖动透镜探索房间，靠近物品自动发现线索",
+    clues: [
+      { id: "c0", icon: "frame", text: "相框背面刻着", char: "7" },
+      { id: "c1", icon: "bulb", text: "灯座底部标有", char: "A" },
+      { id: "c2", icon: "book", text: "书页边缘写着", char: "4" },
+      { id: "c3", icon: "cup", text: "杯底印有", char: "B" },
+      { id: "c4", icon: "wood", text: "桌面划痕组成", char: "9" },
+      { id: "c5", icon: "search", text: "墙上 faint 标记", char: "C" }
+    ]},
+  { id: 2, name: "实验室", code: "X3Y8Z1", hint: "每个设备都有编号，靠近查看",
+    clues: [
+      { id: "c0", icon: "flask", text: "试剂柜标有", char: "X" },
+      { id: "c1", icon: "microscope", text: "显微镜编号", char: "3" },
+      { id: "c2", icon: "still", text: "蒸馏器型号", char: "Y" },
+      { id: "c3", icon: "chart", text: "数据记录", char: "8" },
+      { id: "c4", icon: "dna", text: "基因序列末尾", char: "Z" },
+      { id: "c5", icon: "hash", text: "批次代码", char: "1" }
+    ]},
+  { id: 3, name: "密室逃脱", code: "9527", hint: "4 位数字，靠近物品发现",
+    clues: [
+      { id: "c0", icon: "door", text: "门牌号是", char: "9" },
+      { id: "c1", icon: "dotred", text: "红色按钮标", char: "5" },
+      { id: "c2", icon: "dotgreen", text: "绿色按钮标", char: "2" },
+      { id: "c3", icon: "wind", text: "通风口刻", char: "7" }
+    ]},
+  { id: 4, name: "地窖", code: "K5R8W", hint: "地下潮湿昏暗，仔细寻找每一处",
+    clues: [
+      { id: "c0", icon: "box", text: "木箱上刻着", char: "K" },
+      { id: "c1", icon: "wine", text: "酒桶标签", char: "5" },
+      { id: "c2", icon: "column", text: "石柱上写", char: "R" },
+      { id: "c3", icon: "hammer", text: "地面划痕", char: "8" },
+      { id: "c4", icon: "web", text: "蜘蛛网后面", char: "W" }
+    ]},
+  { id: 5, name: "图书馆", code: "M3T7N2", hint: "书中自有黄金屋，仔细查看每一本书",
+    clues: [
+      { id: "c0", icon: "books", text: "第一排书架", char: "M" },
+      { id: "c1", icon: "bulb", text: "台灯底座", char: "3" },
+      { id: "c2", icon: "book", text: "翻开的一页", char: "T" },
+      { id: "c3", icon: "chair", text: "椅子背面", char: "7" },
+      { id: "c4", icon: "map", text: "墙上地图", char: "N" },
+      { id: "c5", icon: "bookmark", text: "书签上的字", char: "2" }
+    ]},
+  { id: 6, name: "天台", code: "F6G1H9", hint: "夜风很大，注意脚下与头顶",
+    clues: [
+      { id: "c0", icon: "antenna", text: "天线顶端", char: "F" },
+      { id: "c1", icon: "oil", text: "水箱锈斑", char: "6" },
+      { id: "c2", icon: "wind", text: "通风口铭牌", char: "G" },
+      { id: "c3", icon: "brick", text: "地面裂缝", char: "1" },
+      { id: "c4", icon: "satellite", text: "卫星锅背面", char: "H" },
+      { id: "c5", icon: "sparkle", text: "星群中拼出", char: "9" }
+    ]},
+  { id: 7, name: "废弃医院", code: "P4J7L3", hint: "惨白灯光下，一切都有痕迹",
+    clues: [
+      { id: "c0", icon: "bed", text: "病床编号", char: "P" },
+      { id: "c1", icon: "stethoscope", text: "推车抽屉", char: "4" },
+      { id: "c2", icon: "syringe", text: "输液架挂钩", char: "J" },
+      { id: "c3", icon: "ambulance", text: "急救箱标签", char: "7" },
+      { id: "c4", icon: "clipboard", text: "墙面病历", char: "L" },
+      { id: "c5", icon: "flashlight", text: "地砖缝隙", char: "3" }
+    ]},
+  { id: 8, name: "深海潜艇", code: "S8V2Q5", hint: "深海幽暗，金属反光处藏着答案",
+    clues: [
+      { id: "c0", icon: "gauge", text: "主仪表盘", char: "S" },
+      { id: "c1", icon: "window", text: "舷窗玻璃", char: "8" },
+      { id: "c2", icon: "joystick", text: "控制杆手柄", char: "V" },
+      { id: "c3", icon: "rocket", text: "鱼雷管编号", char: "2" },
+      { id: "c4", icon: "telescope", text: "潜望镜目镜", char: "Q" },
+      { id: "c5", icon: "anchor", text: "地板上刻有", char: "5" }
+    ]},
+  { id: 9, name: "钟楼", code: "T2B6M4", hint: "钟声回荡，每一处刻痕都在计时",
+    clues: [
+      { id: "c0", icon: "pendulum", text: "钟摆底部刻着", char: "T" },
+      { id: "c1", icon: "gear", text: "齿轮编号", char: "2" },
+      { id: "c2", icon: "clock", text: "钟面边缘标有", char: "B" },
+      { id: "c3", icon: "stairs", text: "楼梯扶手上写着", char: "6" },
+      { id: "c4", icon: "brick", text: "木梁刻着", char: "M" },
+      { id: "c5", icon: "window", text: "窗棂上刻着", char: "4" }
+    ]},
+  { id: 10, name: "古老剧院", code: "R9D3P7", hint: "帷幕落下前，每个角落都有故事",
+    clues: [
+      { id: "c0", icon: "curtain", text: "幕布褶皱处写着", char: "R" },
+      { id: "c1", icon: "seat", text: "座椅编号", char: "9" },
+      { id: "c2", icon: "stage", text: "舞台机关刻着", char: "D" },
+      { id: "c3", icon: "mirror", text: "化妆镜边缘", char: "3" },
+      { id: "c4", icon: "box", text: "道具箱标签", char: "P" },
+      { id: "c5", icon: "bulb", text: "吊灯下方标有", char: "7" }
+    ]},
+  { id: 11, name: "温室花园", code: "G5N8L1", hint: "绿意盎然，生命的气息掩盖着秘密",
+    clues: [
+      { id: "c0", icon: "pot", text: "花盆底部刻着", char: "G" },
+      { id: "c1", icon: "watering", text: "喷壶侧面标有", char: "5" },
+      { id: "c2", icon: "vine", text: "藤蔓后面写着", char: "N" },
+      { id: "c3", icon: "glassroof", text: "玻璃顶编号", char: "8" },
+      { id: "c4", icon: "toolrack", text: "工具架上刻着", char: "L" },
+      { id: "c5", icon: "sink", text: "水槽边缘标有", char: "1" }
+    ]},
+  { id: 12, name: "天文台", code: "W4K2J6", hint: "仰望星空，数字藏在星辰之间",
+    clues: [
+      { id: "c0", icon: "lens", text: "望远镜镜片刻着", char: "W" },
+      { id: "c1", icon: "starmap", text: "星图记录标有", char: "4" },
+      { id: "c2", icon: "clock", text: "天文钟编号", char: "K" },
+      { id: "c3", icon: "console", text: "控制台标签", char: "2" },
+      { id: "c4", icon: "log", text: "观测日志写着", char: "J" },
+      { id: "c5", icon: "dome", text: "穹顶刻着", char: "6" }
+    ]}
+];
+
+const FAKE_SCENES = [
+  `<div style="position:fixed;inset:0;background:#e8e0d4;"><div style="position:absolute;top:15%;left:50%;transform:translateX(-50%);width:140px;height:100px;background:#f5f0e8;border:4px solid #8b7355;"><div style="position:absolute;inset:8px;background:#d4c4a8;"></div></div><div style="position:absolute;bottom:35%;right:15%;width:80px;height:120px;"><div style="position:absolute;top:0;left:15px;width:50px;height:40px;background:#f0e8d0;border-radius:50% 50% 10% 10%;border:2px solid #c4b896;"></div><div style="position:absolute;bottom:0;left:15px;width:50px;height:12px;background:#5a5a5a;border-radius:4px;"></div></div><div style="position:absolute;bottom:38%;left:20%;width:60px;height:45px;background:#8b4513;border-radius:2px;transform:rotate(-8deg);"></div><div style="position:absolute;bottom:0;width:100%;height:35%;background:#c4a882;border-top:3px solid #a08060;"></div></div>`,
+  `<div style="position:fixed;inset:0;background:#2a2a3e;"><div style="position:absolute;top:20%;left:20%;width:100px;height:120px;background:#3a3a4e;border-radius:8px;"></div><div style="position:absolute;top:20%;right:20%;width:100px;height:120px;background:#3a3a4e;border-radius:8px;"></div><div style="position:absolute;bottom:30%;left:50%;transform:translateX(-50%);width:80px;height:60px;background:#4a4a5e;border-radius:4px;"></div><div style="position:absolute;bottom:0;width:100%;height:25%;background:#1a1a2e;border-top:2px solid #3a3a4e;"></div></div>`,
+  `<div style="position:fixed;inset:0;background:#1a0a0a;"><div style="position:absolute;top:10%;left:50%;transform:translateX(-50%);width:60px;height:80px;background:#2a1a1a;border-radius:4px;"></div><div style="position:absolute;top:40%;left:20%;width:40px;height:40px;background:#3a2a2a;border-radius:50%;"></div><div style="position:absolute;top:40%;right:20%;width:40px;height:40px;background:#3a2a2a;border-radius:50%;"></div><div style="position:absolute;bottom:20%;left:50%;transform:translateX(-50%);width:120px;height:8px;background:#2a1a1a;"></div></div>`,
+  `<div style="position:fixed;inset:0;background:#1a0a2a;"><div style="position:absolute;top:0;left:50%;transform:translateX(-50%);width:220px;height:140px;background:#2a1a3a;border-radius:110px 110px 0 0;"></div><div style="position:absolute;top:28%;left:10%;width:120px;height:20px;background:#5a3a2a;border-radius:2px;"></div><div style="position:absolute;bottom:22%;right:18%;width:80px;height:110px;background:#5a3a2a;border-radius:40px 40px 8px 8px;border:3px solid #3a1a0a;"></div><div style="position:absolute;top:35%;left:45%;width:60px;height:200px;background:#3a2a4a;border-radius:4px;"></div><div style="position:absolute;bottom:0;width:100%;height:28%;background:#0a0010;border-top:2px solid #2a1a3a;"></div></div>`,
+  `<div style="position:fixed;inset:0;background:#e8d8b8;"><div style="position:absolute;top:5%;left:5%;width:180px;height:280px;background:#8b6845;border:3px solid #5a3a20;"></div><div style="position:absolute;top:5%;right:5%;width:180px;height:280px;background:#8b6845;border:3px solid #5a3a20;"></div><div style="position:absolute;bottom:20%;left:50%;transform:translateX(-50%);width:280px;height:80px;background:#6a4a2a;border-radius:4px;"></div><div style="position:absolute;bottom:0;width:100%;height:16%;background:#b89870;border-top:2px solid #8b6845;"></div></div>`,
+  `<div style="position:fixed;inset:0;background:linear-gradient(180deg,#0a0a20 0%,#1a1a3a 50%,#2a2a4a 100%);"><div style="position:absolute;bottom:35%;left:0;width:100%;height:60px;background:linear-gradient(180deg,transparent,rgba(255,180,80,0.15));"></div><div style="position:absolute;bottom:35%;left:15%;width:30px;height:25px;background:#1a1a2a;"></div><div style="position:absolute;bottom:35%;right:10%;width:25px;height:20px;background:#2a2a3a;"></div><div style="position:absolute;top:25%;right:15%;width:80px;height:80px;background:#3a3a5a;border-radius:50%;border:4px solid #2a2a4a;"></div><div style="position:absolute;bottom:0;width:100%;height:35%;background:#2a2a3a;border-top:3px solid #4a4a6a;"></div></div>`,
+  `<div style="position:fixed;inset:0;background:#d8d4cc;"><div style="position:absolute;top:0;left:10%;width:120px;height:40px;background:#b8b4ac;"></div><div style="position:absolute;top:0;right:10%;width:120px;height:40px;background:#b8b4ac;"></div><div style="position:absolute;top:30%;left:15%;width:180px;height:100px;background:#a8a49c;border-radius:4px;"></div><div style="position:absolute;bottom:25%;right:18%;width:70px;height:90px;background:#b8b4ac;"></div><div style="position:absolute;bottom:0;width:100%;height:25%;background:#a8a49c;border-top:2px solid #8a8680;"></div></div>`,
+  `<div style="position:fixed;inset:0;background:linear-gradient(180deg,#0a1a20 0%,#0f2a30 50%,#0a1a20 100%);"><div style="position:absolute;top:20%;left:15%;width:100px;height:100px;background:radial-gradient(circle,#1a4a5a 30%,#0a2a3a 70%);border-radius:50%;border:4px solid #2a5a6a;"></div><div style="position:absolute;top:20%;right:15%;width:100px;height:100px;background:radial-gradient(circle,#1a4a5a 30%,#0a2a3a 70%);border-radius:50%;border:4px solid #2a5a6a;"></div><div style="position:absolute;bottom:30%;left:50%;transform:translateX(-50%);width:300px;height:60px;background:#1a3a4a;border-radius:8px;border:2px solid #2a5a6a;"></div><div style="position:absolute;bottom:0;width:100%;height:25%;background:#051520;border-top:2px solid #1a3a4a;"></div></div>`,
+  `<div style="position:fixed;inset:0;background:linear-gradient(180deg,#1a1408 0%,#2a2010 50%,#1a1408 100%);"><div style="position:absolute;top:8%;left:50%;transform:translateX(-50%);width:160px;height:160px;border-radius:50%;background:radial-gradient(circle,#3a2a10,#1a0e00);border:4px solid #8b6a20;"></div><div style="position:absolute;top:30%;left:15%;width:80px;height:180px;background:#3a2a10;border-radius:4px;"></div><div style="position:absolute;top:40%;right:15%;width:60px;height:150px;background:#2a1a08;border-radius:4px;"></div><div style="position:absolute;bottom:0;width:100%;height:25%;background:#0f0a04;border-top:2px solid #3a2a10;"></div></div>`,
+  `<div style="position:fixed;inset:0;background:linear-gradient(180deg,#1a0a10 0%,#2a1018 60%,#1a0a10 100%);"><div style="position:absolute;top:0;left:0;width:100%;height:40%;background:radial-gradient(ellipse at 50% 0%, #5a1a20 0%, #2a0a10 70%);opacity:0.7;"></div><div style="position:absolute;top:45%;left:10%;width:200px;height:15px;background:#3a2a1a;"></div><div style="position:absolute;top:50%;left:15%;width:50px;height:80px;background:#5a1a20;"></div><div style="position:absolute;top:50%;right:15%;width:50px;height:80px;background:#5a1a20;"></div><div style="position:absolute;bottom:0;width:100%;height:25%;background:#0a0508;border-top:2px solid #3a2a1a;"></div></div>`,
+  `<div style="position:fixed;inset:0;background:linear-gradient(180deg,#0a2010 0%,#15301a 50%,#0a2010 100%);"><div style="position:absolute;top:0;left:0;width:100%;height:100%;background:repeating-linear-gradient(90deg,transparent 0, transparent 120px, rgba(74,180,110,0.06) 120px, rgba(74,180,110,0.06) 122px);"></div><div style="position:absolute;top:10%;left:0;width:100%;height:4px;background:rgba(120,220,160,0.3);"></div><div style="position:absolute;bottom:20%;left:20%;width:60px;height:40px;background:#3a2a1a;"></div><div style="position:absolute;bottom:25%;right:25%;width:80px;height:80px;background:#2a4a2a;border-radius:8px;"></div><div style="position:absolute;bottom:0;width:100%;height:20%;background:#0a1208;border-top:2px solid #2a4a2a;"></div></div>`,
+  `<div style="position:fixed;inset:0;background:linear-gradient(180deg,#050520 0%,#0a0a30 50%,#050520 100%);"><div style="position:absolute;top:15%;left:50%;transform:translateX(-50%);width:100px;height:100px;border-radius:50%;background:radial-gradient(circle,rgba(110,180,255,0.15),transparent 70%);"></div><div style="position:absolute;top:30%;left:15%;width:80px;height:80px;border:2px solid #1a2a5a;border-radius:50%;"></div><div style="position:absolute;top:30%;right:15%;width:80px;height:80px;border:2px solid #1a2a5a;border-radius:50%;"></div><div style="position:absolute;bottom:0;width:100%;height:30%;background:#020208;border-top:2px solid #1a2a5a;"></div></div>`
+];
+
+const REAL_SCENES = [
+  `<div id="lensContent"><div style="position:absolute;inset:0;background:#e8e0d4;"></div><div class="clue-area" data-clue="0" style="position:absolute;top:15%;left:50%;transform:translateX(-50%);width:140px;height:100px;background:#f5f0e8;border:4px solid #8b7355;"><div style="position:absolute;inset:8px;background:#2d5016;display:flex;align-items:center;justify-content:center;"><span style="color:#6ec8ff;font-size:48px;font-weight:bold;">7</span></div></div><div class="clue-area" data-clue="1" style="position:absolute;bottom:35%;right:15%;width:80px;height:120px;"><div style="position:absolute;top:0;left:15px;width:50px;height:40px;background:#f0e8d0;border-radius:50% 50% 10% 10%;border:2px solid #c4b896;"></div><div style="position:absolute;bottom:12px;left:38px;width:4px;height:70px;background:#666;"></div><div style="position:absolute;bottom:0;left:15px;width:50px;height:12px;background:#5a5a5a;border-radius:4px;"></div><div style="position:absolute;top:45px;left:20px;color:#6ec8ff;font-size:20px;font-weight:bold;">A</div></div><div class="clue-area" data-clue="2" style="position:absolute;bottom:38%;left:20%;width:60px;height:45px;background:#8b4513;border-radius:2px;transform:rotate(-8deg);"><div style="position:absolute;left:5px;top:3px;right:5px;bottom:3px;background:#f5f0e8;display:flex;align-items:center;justify-content:center;"><span style="color:#8b4513;font-size:18px;font-weight:bold;">4</span></div></div><div class="clue-area" data-clue="3" style="position:absolute;bottom:38%;left:35%;width:36px;height:30px;background:#ddd;border-radius:0 0 18px 18px;"><div style="position:absolute;bottom:2px;left:50%;transform:translateX(-50%);color:#c4a882;font-size:14px;font-weight:bold;">B</div></div><div style="position:absolute;bottom:0;width:100%;height:35%;background:#c4a882;border-top:3px solid #a08060;"></div><div class="clue-area" data-clue="4" style="position:absolute;bottom:23%;left:56%;width:70px;height:50px;display:flex;align-items:center;justify-content:center;"><span style="color:#8b7355;font-size:24px;font-weight:bold;transform:rotate(-15deg);">9</span></div><div class="clue-area" data-clue="5" style="position:absolute;top:50%;left:15%;width:80px;height:80px;color:rgba(110,200,255,0.15);font-size:60px;font-weight:bold;transform:rotate(45deg);display:flex;align-items:center;justify-content:center;">C</div></div>`,
+  `<div id="lensContent"><div style="position:absolute;inset:0;background:#2a2a3e;"></div><div class="clue-area" data-clue="0" style="position:absolute;top:20%;left:20%;width:100px;height:120px;background:#3a3a4e;border-radius:8px;display:flex;align-items:center;justify-content:center;"><span style="color:#6ec8ff;font-size:40px;font-weight:bold;">X</span></div><div class="clue-area" data-clue="1" style="position:absolute;top:20%;right:20%;width:100px;height:120px;background:#3a3a4e;border-radius:8px;display:flex;align-items:center;justify-content:center;"><span style="color:#ff6b9d;font-size:40px;font-weight:bold;">3</span></div><div class="clue-area" data-clue="2" style="position:absolute;bottom:30%;left:50%;transform:translateX(-50%);width:80px;height:60px;background:#4a4a5e;border-radius:4px;display:flex;align-items:center;justify-content:center;"><span style="color:#4ade80;font-size:28px;font-weight:bold;">Y</span></div><div style="position:absolute;bottom:0;width:100%;height:25%;background:#1a1a2e;border-top:2px solid #3a3a4e;"></div><div class="clue-area" data-clue="3" style="position:absolute;bottom:8%;left:28%;width:70px;height:55px;display:flex;align-items:center;justify-content:center;"><span style="color:#fbbf24;font-size:32px;font-weight:bold;">8</span></div><div class="clue-area" data-clue="4" style="position:absolute;top:60%;left:10%;width:60px;height:50px;color:rgba(110,200,255,0.2);font-size:24px;display:flex;align-items:center;justify-content:center;">Z</div><div class="clue-area" data-clue="5" style="position:absolute;top:63%;right:12%;width:50px;height:45px;color:rgba(255,107,157,0.2);font-size:20px;display:flex;align-items:center;justify-content:center;">1</div></div>`,
+  `<div id="lensContent"><div style="position:absolute;inset:0;background:#1a0a0a;"></div><div class="clue-area" data-clue="0" style="position:absolute;top:10%;left:50%;transform:translateX(-50%);width:60px;height:80px;background:#2a1a1a;border-radius:4px;display:flex;align-items:center;justify-content:center;"><span style="color:#ef4444;font-size:36px;font-weight:bold;">9</span></div><div class="clue-area" data-clue="1" style="position:absolute;top:40%;left:20%;width:40px;height:40px;background:#3a2a2a;border-radius:50%;display:flex;align-items:center;justify-content:center;"><span style="color:#fbbf24;font-size:20px;font-weight:bold;">5</span></div><div class="clue-area" data-clue="2" style="position:absolute;top:40%;right:20%;width:40px;height:40px;background:#3a2a2a;border-radius:50%;display:flex;align-items:center;justify-content:center;"><span style="color:#4ade80;font-size:20px;font-weight:bold;">2</span></div><div style="position:absolute;bottom:20%;left:50%;transform:translateX(-50%);width:120px;height:8px;background:#2a1a1a;"></div><div class="clue-area" data-clue="3" style="position:absolute;bottom:21%;left:50%;transform:translateX(-50%);width:60px;height:45px;display:flex;align-items:center;justify-content:center;"><span style="color:#6ec8ff;font-size:20px;">7</span></div></div>`,
+  `<div id="lensContent"><div style="position:absolute;inset:0;background:#1a0a2a;"></div><div style="position:absolute;top:0;left:50%;transform:translateX(-50%);width:220px;height:140px;background:#2a1a3a;border-radius:110px 110px 0 0;"></div><div style="position:absolute;top:28%;left:10%;width:120px;height:20px;background:#5a3a2a;border-radius:2px;"></div><div style="position:absolute;top:32%;left:10%;width:120px;height:15px;background:#6a4a3a;border-radius:2px;"></div><div style="position:absolute;bottom:22%;right:18%;width:80px;height:110px;background:#5a3a2a;border-radius:40px 40px 8px 8px;border:3px solid #3a1a0a;"></div><div style="position:absolute;top:35%;left:45%;width:60px;height:200px;background:#3a2a4a;border-radius:4px;"></div><div style="position:absolute;bottom:0;width:100%;height:28%;background:#0a0010;border-top:2px solid #2a1a3a;"></div><div class="clue-area" data-clue="0" style="position:absolute;top:30%;left:15%;width:56px;height:56px;display:flex;align-items:center;justify-content:center;"><span style="color:#c084fc;font-size:28px;font-weight:bold;">K</span></div><div class="clue-area" data-clue="1" style="position:absolute;bottom:35%;right:22%;width:56px;height:56px;display:flex;align-items:center;justify-content:center;"><span style="color:#fbbf24;font-size:28px;font-weight:bold;">5</span></div><div class="clue-area" data-clue="2" style="position:absolute;top:55%;left:47%;width:50px;height:50px;display:flex;align-items:center;justify-content:center;"><span style="color:#6ec8ff;font-size:24px;font-weight:bold;">R</span></div><div class="clue-area" data-clue="3" style="position:absolute;bottom:15%;left:32%;width:60px;height:50px;display:flex;align-items:center;justify-content:center;"><span style="color:#4ade80;font-size:24px;font-weight:bold;transform:rotate(-10deg);">8</span></div><div class="clue-area" data-clue="4" style="position:absolute;top:8%;left:50%;transform:translateX(-50%);width:60px;height:55px;display:flex;align-items:center;justify-content:center;"><span style="color:#c084fc;font-size:22px;font-weight:bold;">W</span></div></div>`,
+  `<div id="lensContent"><div style="position:absolute;inset:0;background:#e8d8b8;"></div><div style="position:absolute;top:5%;left:5%;width:180px;height:280px;background:#8b6845;border:3px solid #5a3a20;"></div><div style="position:absolute;top:12%;left:8%;width:150px;height:8px;background:#5a3a20;"></div><div style="position:absolute;top:25%;left:8%;width:150px;height:8px;background:#5a3a20;"></div><div style="position:absolute;top:5%;right:5%;width:180px;height:280px;background:#8b6845;border:3px solid #5a3a20;"></div><div style="position:absolute;top:12%;right:8%;width:150px;height:8px;background:#5a3a20;"></div><div style="position:absolute;top:25%;right:8%;width:150px;height:8px;background:#5a3a20;"></div><div style="position:absolute;bottom:20%;left:50%;transform:translateX(-50%);width:280px;height:80px;background:#6a4a2a;border-radius:4px;"></div><div style="position:absolute;bottom:0;width:100%;height:16%;background:#b89870;border-top:2px solid #8b6845;"></div><div class="clue-area" data-clue="0" style="position:absolute;top:18%;left:12%;width:70px;height:50px;display:flex;align-items:center;justify-content:center;"><span style="color:#8b4513;font-size:26px;font-weight:bold;">M</span></div><div class="clue-area" data-clue="1" style="position:absolute;bottom:40%;left:44%;width:50px;height:50px;display:flex;align-items:center;justify-content:center;"><span style="color:#6ec8ff;font-size:22px;font-weight:bold;">3</span></div><div class="clue-area" data-clue="2" style="position:absolute;top:18%;right:12%;width:70px;height:50px;display:flex;align-items:center;justify-content:center;"><span style="color:#8b4513;font-size:26px;font-weight:bold;">T</span></div><div class="clue-area" data-clue="3" style="position:absolute;bottom:8%;left:30%;width:60px;height:50px;display:flex;align-items:center;justify-content:center;"><span style="color:#8b4513;font-size:22px;font-weight:bold;">7</span></div><div class="clue-area" data-clue="4" style="position:absolute;top:50%;left:5%;width:60px;height:60px;display:flex;align-items:center;justify-content:center;"><span style="color:#c084fc;font-size:22px;font-weight:bold;">N</span></div><div class="clue-area" data-clue="5" style="position:absolute;top:50%;right:5%;width:60px;height:60px;display:flex;align-items:center;justify-content:center;"><span style="color:#4ade80;font-size:22px;font-weight:bold;">2</span></div></div>`,
+  `<div id="lensContent"><div style="position:absolute;inset:0;background:linear-gradient(180deg,#0a0a20 0%,#1a1a3a 50%,#2a2a4a 100%);"></div><div style="position:absolute;bottom:35%;left:0;width:100%;height:60px;background:linear-gradient(180deg,transparent,rgba(255,180,80,0.18));"></div><div style="position:absolute;bottom:35%;left:5%;width:20px;height:15px;background:#2a2a3a;"></div><div style="position:absolute;bottom:35%;left:15%;width:30px;height:25px;background:#1a1a2a;"></div><div style="position:absolute;top:25%;right:15%;width:80px;height:80px;background:#3a3a5a;border-radius:50%;border:4px solid #2a2a4a;"></div><div style="position:absolute;top:35%;left:20%;width:60px;height:120px;background:#3a3a5a;border-radius:8px;"></div><div style="position:absolute;bottom:0;width:100%;height:35%;background:#2a2a3a;border-top:3px solid #4a4a6a;"></div><div class="clue-area" data-clue="0" style="position:absolute;top:8%;right:13%;width:60px;height:60px;display:flex;align-items:center;justify-content:center;"><span style="color:#6ec8ff;font-size:26px;font-weight:bold;">F</span></div><div class="clue-area" data-clue="1" style="position:absolute;top:40%;left:22%;width:50px;height:50px;display:flex;align-items:center;justify-content:center;"><span style="color:#fbbf24;font-size:24px;font-weight:bold;">6</span></div><div class="clue-area" data-clue="2" style="position:absolute;top:52%;left:22%;width:50px;height:50px;display:flex;align-items:center;justify-content:center;"><span style="color:#4ade80;font-size:22px;font-weight:bold;">G</span></div><div class="clue-area" data-clue="3" style="position:absolute;bottom:15%;left:30%;width:60px;height:50px;display:flex;align-items:center;justify-content:center;"><span style="color:#c084fc;font-size:24px;font-weight:bold;">1</span></div><div class="clue-area" data-clue="4" style="position:absolute;top:30%;right:18%;width:56px;height:56px;display:flex;align-items:center;justify-content:center;"><span style="color:#ff6b9d;font-size:24px;font-weight:bold;">H</span></div><div class="clue-area" data-clue="5" style="position:absolute;top:18%;left:50%;width:60px;height:60px;display:flex;align-items:center;justify-content:center;"><span style="color:#fbbf24;font-size:22px;font-weight:bold;">9</span></div></div>`,
+  `<div id="lensContent"><div style="position:absolute;inset:0;background:#d8d4cc;"></div><div style="position:absolute;top:0;left:10%;width:120px;height:40px;background:#b8b4ac;"></div><div style="position:absolute;top:0;right:10%;width:120px;height:40px;background:#b8b4ac;"></div><div style="position:absolute;top:30%;left:15%;width:180px;height:100px;background:#a8a49c;border-radius:4px;"></div><div style="position:absolute;top:45%;left:20%;width:100px;height:8px;background:#8a8680;"></div><div style="position:absolute;bottom:25%;right:18%;width:70px;height:90px;background:#b8b4ac;"></div><div style="position:absolute;top:35%;left:50%;transform:translateX(-50%);width:4px;height:180px;background:#9a9690;"></div><div style="position:absolute;bottom:0;width:100%;height:25%;background:#a8a49c;border-top:2px solid #8a8680;"></div><div class="clue-area" data-clue="0" style="position:absolute;top:33%;left:22%;width:60px;height:50px;display:flex;align-items:center;justify-content:center;"><span style="color:#1f7a4a;font-size:24px;font-weight:bold;">P</span></div><div class="clue-area" data-clue="1" style="position:absolute;bottom:33%;right:22%;width:56px;height:50px;display:flex;align-items:center;justify-content:center;"><span style="color:#b91c1c;font-size:24px;font-weight:bold;">4</span></div><div class="clue-area" data-clue="2" style="position:absolute;top:47%;left:47%;width:56px;height:50px;display:flex;align-items:center;justify-content:center;"><span style="color:#1e40af;font-size:22px;font-weight:bold;">J</span></div><div class="clue-area" data-clue="3" style="position:absolute;bottom:15%;right:20%;width:60px;height:50px;display:flex;align-items:center;justify-content:center;"><span style="color:#b91c1c;font-size:24px;font-weight:bold;">7</span></div><div class="clue-area" data-clue="4" style="position:absolute;top:18%;left:8%;width:60px;height:50px;display:flex;align-items:center;justify-content:center;"><span style="color:#1f7a4a;font-size:22px;font-weight:bold;">L</span></div><div class="clue-area" data-clue="5" style="position:absolute;bottom:10%;left:35%;width:56px;height:50px;display:flex;align-items:center;justify-content:center;"><span style="color:#1e40af;font-size:22px;font-weight:bold;">3</span></div></div>`,
+  `<div id="lensContent"><div style="position:absolute;inset:0;background:linear-gradient(180deg,#0a1a20 0%,#0f2a30 50%,#0a1a20 100%);"></div><div style="position:absolute;top:20%;left:15%;width:100px;height:100px;background:radial-gradient(circle,#1a4a5a 30%,#0a2a3a 70%);border-radius:50%;border:4px solid #2a5a6a;"></div><div style="position:absolute;top:20%;right:15%;width:100px;height:100px;background:radial-gradient(circle,#1a4a5a 30%,#0a2a3a 70%);border-radius:50%;border:4px solid #2a5a6a;"></div><div style="position:absolute;bottom:30%;left:50%;transform:translateX(-50%);width:300px;height:60px;background:#1a3a4a;border-radius:8px;border:2px solid #2a5a6a;"></div><div style="position:absolute;bottom:0;width:100%;height:25%;background:#051520;border-top:2px solid #1a3a4a;"></div><div class="clue-area" data-clue="0" style="position:absolute;bottom:33%;left:42%;width:60px;height:50px;display:flex;align-items:center;justify-content:center;"><span style="color:#4ade80;font-size:24px;font-weight:bold;">S</span></div><div class="clue-area" data-clue="1" style="position:absolute;top:24%;left:19%;width:60px;height:56px;display:flex;align-items:center;justify-content:center;"><span style="color:#6ec8ff;font-size:26px;font-weight:bold;">8</span></div><div class="clue-area" data-clue="2" style="position:absolute;top:50%;left:24%;width:56px;height:56px;display:flex;align-items:center;justify-content:center;"><span style="color:#fbbf24;font-size:22px;font-weight:bold;">V</span></div><div class="clue-area" data-clue="3" style="position:absolute;bottom:17%;left:11%;width:60px;height:46px;display:flex;align-items:center;justify-content:center;"><span style="color:#ff6b9d;font-size:22px;font-weight:bold;">2</span></div><div class="clue-area" data-clue="4" style="position:absolute;top:40%;left:49%;width:56px;height:56px;display:flex;align-items:center;justify-content:center;"><span style="color:#c084fc;font-size:22px;font-weight:bold;">Q</span></div><div class="clue-area" data-clue="5" style="position:absolute;bottom:10%;right:22%;width:56px;height:50px;display:flex;align-items:center;justify-content:center;"><span style="color:#6ec8ff;font-size:22px;font-weight:bold;">5</span></div></div>`,
+  `<div id="lensContent"><div style="position:absolute;inset:0;background:linear-gradient(180deg,#1a1408 0%,#2a2010 50%,#1a1408 100%);"></div><div style="position:absolute;top:8%;left:50%;transform:translateX(-50%);width:160px;height:160px;border-radius:50%;background:radial-gradient(circle,#3a2a10,#1a0e00);border:4px solid #8b6a20;"></div><div style="position:absolute;top:30%;left:15%;width:80px;height:180px;background:#3a2a10;border-radius:4px;"></div><div style="position:absolute;top:40%;right:15%;width:60px;height:150px;background:#2a1a08;border-radius:4px;"></div><div style="position:absolute;bottom:0;width:100%;height:25%;background:#0f0a04;border-top:2px solid #3a2a10;"></div><div class="clue-area" data-clue="0" style="position:absolute;bottom:30%;left:22%;width:50px;height:70px;display:flex;align-items:center;justify-content:center;"><span style="color:#d4a050;font-size:26px;font-weight:bold;">T</span></div><div class="clue-area" data-clue="1" style="position:absolute;top:20%;right:22%;width:50px;height:50px;display:flex;align-items:center;justify-content:center;"><span style="color:#d4a050;font-size:24px;font-weight:bold;">2</span></div><div class="clue-area" data-clue="2" style="position:absolute;top:15%;left:50%;transform:translateX(-50%);width:50px;height:50px;display:flex;align-items:center;justify-content:center;"><span style="color:#e0b060;font-size:22px;font-weight:bold;">B</span></div><div class="clue-area" data-clue="3" style="position:absolute;bottom:12%;left:38%;width:60px;height:50px;display:flex;align-items:center;justify-content:center;"><span style="color:#d4a050;font-size:22px;font-weight:bold;">6</span></div><div class="clue-area" data-clue="4" style="position:absolute;top:42%;left:15%;width:50px;height:50px;display:flex;align-items:center;justify-content:center;"><span style="color:#d4a050;font-size:22px;font-weight:bold;">M</span></div><div class="clue-area" data-clue="5" style="position:absolute;top:42%;right:15%;width:50px;height:50px;display:flex;align-items:center;justify-content:center;"><span style="color:#d4a050;font-size:22px;font-weight:bold;">4</span></div></div>`,
+  `<div id="lensContent"><div style="position:absolute;inset:0;background:linear-gradient(180deg,#1a0a10 0%,#2a1018 60%,#1a0a10 100%);"></div><div style="position:absolute;top:0;left:0;width:100%;height:40%;background:radial-gradient(ellipse at 50% 0%, #5a1a20 0%, #2a0a10 70%);opacity:0.7;"></div><div style="position:absolute;top:45%;left:10%;width:200px;height:15px;background:#3a2a1a;"></div><div style="position:absolute;top:50%;left:15%;width:50px;height:80px;background:#5a1a20;"></div><div style="position:absolute;top:50%;right:15%;width:50px;height:80px;background:#5a1a20;"></div><div style="position:absolute;bottom:0;width:100%;height:25%;background:#0a0508;border-top:2px solid #3a2a1a;"></div><div class="clue-area" data-clue="0" style="position:absolute;top:8%;left:20%;width:60px;height:60px;display:flex;align-items:center;justify-content:center;"><span style="color:#d4a050;font-size:24px;font-weight:bold;">R</span></div><div class="clue-area" data-clue="1" style="position:absolute;bottom:30%;left:18%;width:56px;height:56px;display:flex;align-items:center;justify-content:center;"><span style="color:#d4a050;font-size:24px;font-weight:bold;">9</span></div><div class="clue-area" data-clue="2" style="position:absolute;top:48%;left:50%;transform:translateX(-50%);width:56px;height:56px;display:flex;align-items:center;justify-content:center;"><span style="color:#d4a050;font-size:22px;font-weight:bold;">D</span></div><div class="clue-area" data-clue="3" style="position:absolute;top:8%;right:20%;width:60px;height:60px;display:flex;align-items:center;justify-content:center;"><span style="color:#d4a050;font-size:22px;font-weight:bold;">3</span></div><div class="clue-area" data-clue="4" style="position:absolute;bottom:30%;right:18%;width:56px;height:56px;display:flex;align-items:center;justify-content:center;"><span style="color:#d4a050;font-size:22px;font-weight:bold;">P</span></div><div class="clue-area" data-clue="5" style="position:absolute;bottom:10%;left:50%;transform:translateX(-50%);width:56px;height:56px;display:flex;align-items:center;justify-content:center;"><span style="color:#d4a050;font-size:22px;font-weight:bold;">7</span></div></div>`,
+  `<div id="lensContent"><div style="position:absolute;inset:0;background:linear-gradient(180deg,#0a2010 0%,#15301a 50%,#0a2010 100%);"></div><div style="position:absolute;top:0;left:0;width:100%;height:100%;background:repeating-linear-gradient(90deg,transparent 0, transparent 120px, rgba(74,180,110,0.06) 120px, rgba(74,180,110,0.06) 122px);"></div><div style="position:absolute;top:10%;left:0;width:100%;height:4px;background:rgba(120,220,160,0.3);"></div><div style="position:absolute;bottom:20%;left:20%;width:60px;height:40px;background:#3a2a1a;"></div><div style="position:absolute;bottom:25%;right:25%;width:80px;height:80px;background:#2a4a2a;border-radius:8px;"></div><div style="position:absolute;bottom:0;width:100%;height:20%;background:#0a1208;border-top:2px solid #2a4a2a;"></div><div class="clue-area" data-clue="0" style="position:absolute;bottom:22%;left:22%;width:56px;height:50px;display:flex;align-items:center;justify-content:center;"><span style="color:#6ee090;font-size:22px;font-weight:bold;">G</span></div><div class="clue-area" data-clue="1" style="position:absolute;bottom:28%;right:28%;width:56px;height:56px;display:flex;align-items:center;justify-content:center;"><span style="color:#6ee090;font-size:22px;font-weight:bold;">5</span></div><div class="clue-area" data-clue="2" style="position:absolute;top:25%;left:15%;width:56px;height:56px;display:flex;align-items:center;justify-content:center;"><span style="color:#6ee090;font-size:22px;font-weight:bold;">N</span></div><div class="clue-area" data-clue="3" style="position:absolute;top:30%;left:50%;transform:translateX(-50%);width:56px;height:56px;display:flex;align-items:center;justify-content:center;"><span style="color:#6ee090;font-size:22px;font-weight:bold;">8</span></div><div class="clue-area" data-clue="4" style="position:absolute;top:25%;right:15%;width:56px;height:56px;display:flex;align-items:center;justify-content:center;"><span style="color:#6ee090;font-size:22px;font-weight:bold;">L</span></div><div class="clue-area" data-clue="5" style="position:absolute;bottom:8%;left:50%;transform:translateX(-50%);width:56px;height:50px;display:flex;align-items:center;justify-content:center;"><span style="color:#6ee090;font-size:22px;font-weight:bold;">1</span></div></div>`,
+  `<div id="lensContent"><div style="position:absolute;inset:0;background:linear-gradient(180deg,#050520 0%,#0a0a30 50%,#050520 100%);"></div><div style="position:absolute;top:15%;left:50%;transform:translateX(-50%);width:100px;height:100px;border-radius:50%;background:radial-gradient(circle,rgba(110,180,255,0.15),transparent 70%);"></div><div style="position:absolute;top:30%;left:15%;width:80px;height:80px;border:2px solid #1a2a5a;border-radius:50%;"></div><div style="position:absolute;top:30%;right:15%;width:80px;height:80px;border:2px solid #1a2a5a;border-radius:50%;"></div><div style="position:absolute;bottom:0;width:100%;height:30%;background:#020208;border-top:2px solid #1a2a5a;"></div><div class="clue-area" data-clue="0" style="position:absolute;top:50%;left:50%;transform:translateX(-50%);width:56px;height:56px;display:flex;align-items:center;justify-content:center;"><span style="color:#a8d8ff;font-size:24px;font-weight:bold;">W</span></div><div class="clue-area" data-clue="1" style="position:absolute;top:20%;left:18%;width:56px;height:56px;display:flex;align-items:center;justify-content:center;"><span style="color:#a8d8ff;font-size:22px;font-weight:bold;">4</span></div><div class="clue-area" data-clue="2" style="position:absolute;top:20%;right:18%;width:56px;height:56px;display:flex;align-items:center;justify-content:center;"><span style="color:#a8d8ff;font-size:22px;font-weight:bold;">K</span></div><div class="clue-area" data-clue="3" style="position:absolute;bottom:22%;left:22%;width:56px;height:56px;display:flex;align-items:center;justify-content:center;"><span style="color:#a8d8ff;font-size:22px;font-weight:bold;">2</span></div><div class="clue-area" data-clue="4" style="position:absolute;bottom:22%;right:22%;width:56px;height:56px;display:flex;align-items:center;justify-content:center;"><span style="color:#a8d8ff;font-size:22px;font-weight:bold;">J</span></div><div class="clue-area" data-clue="5" style="position:absolute;top:8%;left:50%;transform:translateX(-50%);width:60px;height:50px;display:flex;align-items:center;justify-content:center;"><span style="color:#a8d8ff;font-size:22px;font-weight:bold;">6</span></div></div>`
+];
+
+const game = {
+  currentLevel: 0,
+  foundClues: [],
+  startTime: 0,
+  timerInterval: null,
+  progress: {},
+  _rafId: null,
+  _onPointer: null,
+  _lensPos: { x: 0.5, y: 0.5 },
+  _hasMoved: false,
+  _codeTimer: null,
+  _bindTimer: null,
+  _transitioning: false,
+  _lensScriptPromise: null,
+
+  fmt(sec) {
+    const m = String(Math.floor(sec / 60)).padStart(2, '0');
+    const s = String(sec % 60).padStart(2, '0');
+    return `${m}:${s}`;
+  },
+
+  getXY(evt) {
+    return {
+      x: evt?.clientX ?? window.innerWidth / 2,
+      y: evt?.clientY ?? window.innerHeight / 2
+    };
+  },
+
+  clearPanels() {
+    ['victory', 'finale'].forEach(id => {
+      const el = document.getElementById(id);
+      el.style.transition = 'none';
+      el.classList.remove('show', 'perfect');
+      void el.offsetWidth;
+      el.style.transition = '';
+    });
+    document.getElementById('clue-panel').classList.remove('open');
+    document.getElementById('panelOverlay').classList.remove('active');
+  },
+
+  init() {
+    this.loadProgress();
+    this.renderMenu();
+    this.loadLensScript().then(() => {
+      setTimeout(() => this.finishLoading(), 400);
+    });
+  },
+
+  loadLensScript() {
+    if (this._lensScriptPromise) return this._lensScriptPromise;
+    this._lensScriptPromise = new Promise((resolve) => {
+      if (window.customElements && customElements.get('liquid-lens')) return resolve();
+
+      const s = document.createElement('script');
+      s.src = 'https://cdn.mlstziran.de5.net/lg.js';
+      s.async = true;
+      s.onload = () => {
+        if (customElements.get('liquid-lens')) return resolve();
+        const t0 = Date.now();
+        const poll = () => {
+          if (customElements.get('liquid-lens')) return resolve();
+          if (Date.now() - t0 > 1500) return resolve();
+          setTimeout(poll, 50);
+        };
+        poll();
+      };
+      s.onerror = () => {
+        console.warn('[lens] CDN 加载失败，进入降级模式');
+        resolve();
+      };
+      document.head.appendChild(s);
+    });
+    return this._lensScriptPromise;
+  },
+
+  finishLoading() {
+    const spinner = document.querySelector('.loader-spinner');
+    const rect = spinner.getBoundingClientRect();
+    const vmaxPx = Math.max(window.innerWidth, window.innerHeight);
+
+    this.playTransition(
+      () => document.getElementById('loader').classList.add('hidden'),
+      document.getElementById('menu'),
+      { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2, initialScale: rect.width / vmaxPx }
+    );
+  },
+
+  loadProgress() {
+    const saved = localStorage.getItem('liquidDetective');
+    if (saved) {
+      try { this.progress = JSON.parse(saved) || {}; }
+      catch { this.progress = {}; }
+    }
+  },
+
+  saveProgress() {
+    localStorage.setItem('liquidDetective', JSON.stringify(this.progress));
+  },
+
+  resetProgress() {
+    if (confirm('确定要重置所有进度吗？')) {
+      this.progress = {};
+      this.saveProgress();
+      this.renderMenu();
+    }
+  },
+
+  renderMenu() {
+    document.getElementById('levelSelect').innerHTML = LEVELS.map((level, idx) => {
+      const completed = this.progress[level.id]?.completed;
+      const locked = idx > 0 && !this.progress[LEVELS[idx - 1].id]?.completed;
+      return `
+        <div class="level-card ${completed ? 'completed' : ''} ${locked ? 'locked' : ''}"
+             onclick="${locked ? '' : `game.enterLevel(${idx}, event)`}">
+          <div class="level-num">${level.id}</div>
+          <div class="level-name">${level.name}</div>
+        </div>
+      `;
+    }).join('');
+  },
+
+  playTransition(swapFn, targetEl, opts = {}) {
+    if (this._transitioning) return Promise.resolve();
+    this._transitioning = true;
+
+    const veil = document.getElementById('pageVeil');
+    const W = window.innerWidth;
+    const H = window.innerHeight;
+    const x = opts.x ?? W / 2;
+    const y = opts.y ?? H / 2;
+    const initialScale = opts.initialScale ?? 0.001;
+
+    const radiusAtScale1 = Math.max(W, H) / 2;
+    const maxDist = Math.max(
+      Math.hypot(x, y), Math.hypot(W - x, y),
+      Math.hypot(x, H - y), Math.hypot(W - x, H - y)
+    );
+    const targetScale = (maxDist / radiusAtScale1) * 1.05;
+
+    veil.style.transition = 'none';
+    veil.classList.remove('active', 'fade');
+    veil.style.setProperty('--veil-x', x + 'px');
+    veil.style.setProperty('--veil-y', y + 'px');
+    veil.style.transform = `translate(-50%, -50%) scale(${initialScale})`;
+    veil.style.opacity = '1';
+    void veil.offsetWidth;
+
+    if (targetEl) {
+      targetEl.style.transition = 'none';
+      targetEl.classList.add('blur-in');
+      void targetEl.offsetWidth;
+      targetEl.style.transition = '';
+    }
+
+    veil.style.transition = '';
+    veil.classList.add('active');
+    void veil.offsetWidth;
+    veil.style.transform = `translate(-50%, -50%) scale(${targetScale})`;
+
+    return new Promise((resolve) => {
+      setTimeout(() => {
+        this.clearPanels();
+        try { swapFn(); } catch (e) { console.error(e); }
+
+        requestAnimationFrame(() => {
+          requestAnimationFrame(() => {
+            veil.classList.add('fade');
+            if (targetEl) targetEl.classList.remove('blur-in');
+
+            setTimeout(() => {
+              veil.style.transition = 'none';
+              veil.classList.remove('active', 'fade');
+              veil.style.transform = 'translate(-50%, -50%) scale(0.001)';
+              veil.style.opacity = '1';
+              void veil.offsetWidth;
+              veil.style.transition = '';
+              this._transitioning = false;
+              resolve();
+            }, 320);
+          });
+        });
+      }, 400);
+    });
+  },
+
+  navigate(sceneId, swapFn, evt) {
+    const { x, y } = this.getXY(evt);
+    return this.playTransition(swapFn, document.getElementById(sceneId), { x, y });
+  },
+
+  enterLevel(idx, evt) {
+    this.navigate('game', () => this.startLevel(idx), evt);
+  },
+
+  exitToMenu(evt) {
+    this.navigate('menu', () => this.backToMenu(), evt);
+  },
+
+  nextLevel(evt) {
+    if (this.currentLevel + 1 < LEVELS.length) {
+      this.navigate('game', () => this.startLevel(this.currentLevel + 1), evt);
+    }
+  },
+
+  restartAll(evt) {
+    this.navigate('menu', () => {
+      this.progress = {};
+      this.saveProgress();
+      document.getElementById('game').classList.remove('active');
+      document.getElementById('menu').classList.remove('hidden');
+      this.renderMenu();
+    }, evt);
+  },
+
+  makeLens(idx) {
+    const lens = document.createElement('liquid-lens');
+    const attrs = {
+      h: '1', fullscreen: '', 'lens-width': '280', 'lens-height': '200',
+      'lens-radius': '100', 'bezel-width': '32', 'glass-thickness': '70',
+      refraction: '2.6', dispersion: '0.12', 'specular-opacity': '0.95',
+      surface: 'convex_squircle', 'render-mode': 'clone', dpr: '2', 'texture-cap': '1024'
+    };
+    for (const [k, v] of Object.entries(attrs)) {
+      if (v === '') lens.setAttribute(k, '');
+      else lens.setAttribute(k, v);
+    }
+    lens.id = 'lens';
+    lens.style.setProperty('--bg-primary', 'transparent');
+    lens.style.setProperty('--bg-secondary', 'transparent');
+    lens.style.setProperty('--grid', 'transparent');
+    lens.innerHTML = REAL_SCENES[idx] || REAL_SCENES[0];
+    return lens;
+  },
+
+  rebuildLens(idx) {
+    const oldLens = document.getElementById('lens');
+    const newLens = this.makeLens(idx);
+    if (oldLens) {
+      oldLens.replaceWith(newLens);
+    } else {
+      const toast = document.getElementById('toast');
+      const game = document.getElementById('game');
+      game.insertBefore(newLens, toast);
+    }
+  },
+
+  startLevel(idx) {
+    this.currentLevel = idx;
+    this.foundClues = [];
+    this.startTime = Date.now();
+    this._hasMoved = false;
+
+    const level = LEVELS[idx];
+    document.getElementById('fakeScene').innerHTML = FAKE_SCENES[idx] || FAKE_SCENES[0];
+    this.rebuildLens(idx);
+    this.buildCodeInputs();
+
+    const panel = document.getElementById('codeDisplay');
+    panel.classList.remove('collapsed', 'shake');
+    panel.style.width = '';
+    panel.style.height = '';
+
+    document.getElementById('levelDisplay').textContent = `关卡 ${level.id} · ${level.name}`;
+    document.getElementById('menu').classList.add('hidden');
+    document.getElementById('game').classList.add('active');
+
+    this.renderClues();
+    this.startTimer();
+    this.showToast(level.hint);
+
+    clearTimeout(this._bindTimer);
+    this._bindTimer = setTimeout(() => this.bindLensDetection(), 30);
+  },
+
+  bindLensDetection() {
+    this.stopLensDetection();
+
+    this._lensPos = { x: 0.5, y: 0.5 };
+    this._hasMoved = false;
+
+    this._onPointer = (e) => {
+      if (e.clientX == null) return;
+      this._lensPos.x = e.clientX / window.innerWidth;
+      this._lensPos.y = e.clientY / window.innerHeight;
+      this._hasMoved = true;
+    };
+    window.addEventListener('pointermove', this._onPointer, { passive: true });
+    window.addEventListener('pointerdown', this._onPointer, { passive: true });
+
+    const check = () => {
+      const lens = document.getElementById('lens');
+      if (!lens || !document.getElementById('game').classList.contains('active') || !this._hasMoved) {
+        this._rafId = requestAnimationFrame(check);
+        return;
+      }
+
+      const W = window.innerWidth;
+      const H = window.innerHeight;
+      const lensCx = this._lensPos.x;
+      const lensCy = this._lensPos.y;
+
+      lens.querySelectorAll('.clue-area').forEach((area) => {
+        const clueId = parseInt(area.dataset.clue, 10);
+        if (isNaN(clueId) || this.foundClues.includes(clueId)) return;
+
+        const r = area.getBoundingClientRect();
+        if (r.width <= 0) return;
+
+        const PAD = 0.012;
+        if (lensCx >= r.left / W - PAD && lensCx <= r.right / W + PAD &&
+            lensCy >= r.top / H - PAD && lensCy <= r.bottom / H + PAD) {
+          this.foundClue(clueId);
+        }
+      });
+
+      this._rafId = requestAnimationFrame(check);
+    };
+
+    this._rafId = requestAnimationFrame(check);
+  },
+
+  stopLensDetection() {
+    if (this._rafId) { cancelAnimationFrame(this._rafId); this._rafId = null; }
+    if (this._onPointer) {
+      window.removeEventListener('pointermove', this._onPointer);
+      window.removeEventListener('pointerdown', this._onPointer);
+      this._onPointer = null;
+    }
+    clearTimeout(this._bindTimer);
+  },
+
+  iconSvg(icon) {
+    const fillMap = { dotred: 'var(--c-red)', dotgreen: 'var(--c-green)' };
+    const isFill = icon in fillMap;
+    const style = isFill ? `style="color:${fillMap[icon]}"` : '';
+    return `<svg class="clue-svg ${isFill ? 'fill' : ''}" ${style}><use href="#ic-${icon}"/></svg>`;
+  },
+
+  foundClue(clueId) {
+    if (this.foundClues.includes(clueId)) return;
+    this.foundClues.push(clueId);
+    const clue = LEVELS[this.currentLevel].clues[clueId];
+    this.renderClues();
+    this.updateSubmitState();
+    this.showToast(`发现线索：${clue.text} [${clue.char}]`);
+  },
+
+  renderClues() {
+    const level = LEVELS[this.currentLevel];
+    document.getElementById('clueList').innerHTML = level.clues.map((clue, idx) => {
+      const found = this.foundClues.includes(idx);
+      return `
+        <div class="clue-slot ${found ? 'found' : ''}">
+          <div class="clue-order">${idx + 1}</div>
+          <div class="clue-icon">${found ? this.iconSvg(clue.icon) : ''}</div>
+          <div class="clue-text">
+            ${found
+              ? `${clue.text} <b style="color:var(--c-accent);font-size:16px;">${clue.char}</b>`
+              : '未发现'}
+          </div>
+        </div>
+      `;
+    }).join('');
+  },
+
+  toggleClues() {
+    const isOpen = document.getElementById('clue-panel').classList.toggle('open');
+    document.getElementById('panelOverlay').classList.toggle('active', isOpen);
+  },
+
+  buildCodeInputs() {
+    const len = LEVELS[this.currentLevel].code.length;
+    const container = document.getElementById('codeInputs');
+    container.innerHTML = '';
+
+    for (let i = 0; i < len; i++) {
+      const input = document.createElement('input');
+      input.type = 'text';
+      input.maxLength = 1;
+      input.className = 'code-char';
+      input.dataset.index = i;
+      input.autocomplete = 'off';
+      input.spellcheck = false;
+
+      input.addEventListener('input', (e) => {
+        const v = (e.target.value || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+        e.target.value = v.slice(-1);
+        e.target.classList.toggle('filled', !!e.target.value);
+        if (e.target.value) {
+          const next = container.querySelector(`input[data-index="${i + 1}"]`);
+          if (next) next.focus();
+        }
+        this.updateSubmitState();
+      });
+
+      input.addEventListener('keydown', (e) => {
+        if (e.key === 'Backspace' && !e.target.value) {
+          const prev = container.querySelector(`input[data-index="${i - 1}"]`);
+          if (prev) {
+            prev.value = '';
+            prev.classList.remove('filled');
+            prev.focus();
+          }
+          this.updateSubmitState();
+        } else if (e.key === 'Enter') {
+          this.checkCode();
+        }
+      });
+
+      input.addEventListener('focus', (e) => e.target.select());
+      container.appendChild(input);
+    }
+
+    this.updateSubmitState();
+  },
+
+  updateSubmitState() {
+    const level = LEVELS[this.currentLevel];
+    const inputs = [...document.querySelectorAll('#codeInputs input')];
+    const allFilled = inputs.length > 0 && inputs.every((i) => i.value.trim());
+    document.getElementById('submitBtn').disabled = !(allFilled && this.foundClues.length >= level.clues.length);
+  },
+
+  toggleCodePanel() {
+    const panel = document.getElementById('codeDisplay');
+
+    if (!panel.classList.contains('collapsed')) {
+      panel.style.width = panel.offsetWidth + 'px';
+      panel.style.height = panel.offsetHeight + 'px';
+      void panel.offsetWidth;
+      panel.classList.add('collapsed');
+      panel.style.width = '52px';
+      panel.style.height = '52px';
+    } else {
+      panel.classList.remove('collapsed');
+      panel.style.width = 'auto';
+      panel.style.height = 'auto';
+      const w = panel.offsetWidth;
+      const h = panel.offsetHeight;
+
+      panel.classList.add('collapsed');
+      panel.style.width = '52px';
+      panel.style.height = '52px';
+      void panel.offsetWidth;
+
+      panel.classList.remove('collapsed');
+      panel.style.width = w + 'px';
+      panel.style.height = h + 'px';
+
+      clearTimeout(this._codeTimer);
+      this._codeTimer = setTimeout(() => {
+        if (!panel.classList.contains('collapsed')) {
+          panel.style.width = '';
+          panel.style.height = '';
+        }
+      }, 400);
+    }
+  },
+
+  checkCode() {
+    const level = LEVELS[this.currentLevel];
+    const inputs = [...document.querySelectorAll('#codeInputs input')];
+    const inputCode = inputs.map((i) => i.value.trim().toUpperCase()).join('');
+
+    if (inputCode === level.code.toUpperCase()) {
+      this.completeLevel();
+      return;
+    }
+
+    this.showToast('密码错误，请按线索面板的编号顺序输入', true);
+
+    const panel = document.getElementById('codeDisplay');
+    panel.classList.remove('shake');
+    void panel.offsetWidth;
+    panel.classList.add('shake');
+    setTimeout(() => panel.classList.remove('shake'), 450);
+
+    inputs.forEach((i) => { i.value = ''; i.classList.remove('filled'); });
+    inputs[0]?.focus();
+    this.updateSubmitState();
+  },
+
+  startTimer() {
+    clearInterval(this.timerInterval);
+    document.getElementById('timer').textContent = '00:00';
+    this.timerInterval = setInterval(() => {
+      document.getElementById('timer').textContent = this.fmt(Math.floor((Date.now() - this.startTime) / 1000));
+    }, 1000);
+  },
+
+  completeLevel() {
+    clearInterval(this.timerInterval);
+    this.stopLensDetection();
+
+    const level = LEVELS[this.currentLevel];
+    const elapsed = Math.floor((Date.now() - this.startTime) / 1000);
+
+    this.progress[level.id] = { completed: true, time: elapsed, cluesFound: this.foundClues.length };
+    this.saveProgress();
+
+    if (this.currentLevel + 1 >= LEVELS.length) {
+      this.showFinale();
+      return;
+    }
+
+    document.getElementById('victoryStats').innerHTML = `
+      关卡：${level.name}<br>
+      用时：${this.fmt(elapsed)}<br>
+      线索：${this.foundClues.length}/${level.clues.length}
+    `;
+    const v = document.getElementById('victory');
+    v.classList.remove('show');
+    void v.offsetWidth;
+    requestAnimationFrame(() => v.classList.add('show'));
+  },
+
+  showFinale() {
+    let totalTime = 0, totalClues = 0, totalPossible = 0;
+
+    const rows = LEVELS.map((level, i) => {
+      const p = this.progress[level.id] || { time: 0, cluesFound: 0 };
+      totalTime += p.time || 0;
+      totalClues += p.cluesFound || 0;
+      totalPossible += level.clues.length;
+
+      const perfect = p.cluesFound >= level.clues.length;
+      const pct = Math.round((p.cluesFound / level.clues.length) * 100);
+
+      return `
+        <div class="finale-row" style="--i:${i}">
+          <span class="row-name">${level.id}. ${level.name}</span>
+          <span class="mini-bar"><span class="mini-fill ${perfect ? 'perfect' : ''}" style="--pct:${pct}%"></span></span>
+          <span class="row-meta">
+            <span class="row-time">${this.fmt(p.time || 0)}</span>
+            <span class="row-clues ${perfect ? 'perfect' : ''}">${p.cluesFound}/${level.clues.length}</span>
+          </span>
+        </div>
+      `;
+    }).join('');
+
+    document.getElementById('finaleSummary').innerHTML = `
+      <div class="finale-stat" style="--i:0">
+        <div class="finale-stat-num" data-target="${LEVELS.length}">0</div>
+        <div class="finale-stat-label">关卡</div>
+      </div>
+      <div class="finale-stat" style="--i:1">
+        <div class="finale-stat-num" data-target="${totalTime}" data-format="time">00:00</div>
+        <div class="finale-stat-label">总用时</div>
+      </div>
+      <div class="finale-stat" style="--i:2">
+        <div class="finale-stat-num" data-target="${totalClues}" data-max="${totalPossible}">0/${totalPossible}</div>
+        <div class="finale-stat-label">线索</div>
+      </div>
+    `;
+    document.getElementById('finaleList').innerHTML = rows;
+
+    const isPerfect = totalClues >= totalPossible;
+    const subtitle = document.getElementById('finaleSubtitle');
+    subtitle.textContent = isPerfect ? 'PERFECT · 完美通关' : 'CASE CLOSED · ALL CLEARED';
+    subtitle.classList.toggle('perfect', isPerfect);
+
+    const finale = document.getElementById('finale');
+    finale.classList.toggle('perfect', isPerfect);
+    finale.classList.remove('show');
+    void finale.offsetWidth;
+    requestAnimationFrame(() => {
+      finale.classList.add('show');
+      setTimeout(() => {
+        document.querySelectorAll('.finale-stat-num').forEach((el) => {
+          this.animateNumber(el, +el.dataset.target, 900, el.dataset.format, el.dataset.max);
+        });
+      }, 760);
+    });
+  },
+
+  animateNumber(el, target, duration, format, max) {
+    const start = performance.now();
+    const tick = (now) => {
+      const t = Math.min(1, (now - start) / duration);
+      const val = Math.round(target * (1 - Math.pow(1 - t, 3)));
+      if (format === 'time') el.textContent = this.fmt(val);
+      else if (max) el.textContent = `${val}/${max}`;
+      else el.textContent = String(val);
+      if (t < 1) requestAnimationFrame(tick);
+    };
+    requestAnimationFrame(tick);
+  },
+
+  backToMenu() {
+    clearInterval(this.timerInterval);
+    this.stopLensDetection();
+    document.getElementById('game').classList.remove('active');
+    document.getElementById('menu').classList.remove('hidden');
+    this.renderMenu();
+  },
+
+  showToast(msg, isError) {
+    const toast = document.getElementById('toast');
+    toast.textContent = msg;
+    toast.className = 'toast show' + (isError ? ' error' : '');
+    clearTimeout(this._toastTimer);
+    this._toastTimer = setTimeout(() => toast.classList.remove('show'), 3000);
+  }
+};
+
+window.addEventListener('DOMContentLoaded', () => game.init());
+</script>
+</body>
+</html>
