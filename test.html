@@ -1,0 +1,1021 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Kimi 互动消息面板</title>
+<!-- 二维码库改由主脚本多源动态加载，避免单一 CDN 失效 -->
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, "PingFang SC", "Noto Sans SC", "Helvetica Neue", sans-serif;
+    background: #f8f9fb; color: #1a1a2e; font-size: 14px;
+    min-height: 100vh; padding: 20px;
+  }
+  .container {
+    max-width: 560px; margin: 0 auto;
+    background: #fff; border-radius: 16px;
+    box-shadow: 0 4px 24px rgba(0,0,0,.08);
+    overflow: hidden;
+  }
+
+  .top {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 16px 20px; border-bottom: 1px solid #f3f4f6;
+  }
+  .top-title { font-size: 18px; font-weight: 700; }
+  .top-status { font-size: 11px; color: #9ca3af; }
+  .top-btns { display: flex; gap: 6px; }
+  .btn {
+    border: 1px solid #e5e7eb; background: #f9fafb;
+    border-radius: 8px; padding: 6px 14px;
+    font-size: 12px; cursor: pointer; color: #6b7280;
+  }
+  .btn:hover { background: #f3f4f6; }
+  .btn:disabled { opacity: .4; cursor: not-allowed; }
+  .btn-primary { background: #6366f1; color: #fff; border-color: #6366f1; font-weight: 600; }
+  .btn-primary:hover { background: #4f46e5; }
+
+  /* 配置区 */
+  .config {
+    padding: 14px 20px;
+    border-bottom: 1px solid #f3f4f6;
+    font-size: 12px; background: #fafbfc;
+  }
+  .config label { display: block; margin-bottom: 4px; color: #6b7280; font-weight: 500; }
+  .config textarea {
+    width: 100%; border: 1px solid #d1d5db; border-radius: 6px;
+    padding: 6px 8px; font-size: 11px; resize: vertical;
+    margin-bottom: 6px; font-family: monospace;
+  }
+  .config-row { display: flex; gap: 6px; margin-bottom: 8px; }
+  .config-row input { flex: 1; border: 1px solid #d1d5db; border-radius: 4px; padding: 4px 8px; font-size: 11px; }
+  .config-st { margin-top: 6px; font-size: 11px; min-height: 16px; }
+  .config-st.ok { color: #065f46; }
+  .config-st.err { color: #dc2626; }
+
+  /* 二维码区 */
+  .qr-box {
+    display: flex; gap: 14px; margin-top: 10px;
+    padding: 12px; background: #fff; border: 1px solid #e5e7eb; border-radius: 10px;
+  }
+  .qr-canvas-wrap {
+    flex-shrink: 0; width: 140px; height: 140px;
+    display: flex; align-items: center; justify-content: center;
+    border: 1px solid #f3f4f6; border-radius: 8px; background: #fff;
+  }
+  .qr-canvas-wrap canvas, .qr-canvas-wrap img { display: block; }
+  .qr-side { flex: 1; display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+  .qr-side label { font-size: 10px; color: #9ca3af; font-weight: 600; }
+  .qr-side input {
+    width: 100%; border: 1px solid #d1d5db; border-radius: 4px;
+    padding: 4px 6px; font-size: 10px; font-family: monospace; outline: none;
+  }
+  .qr-side input:focus { border-color: #6366f1; }
+  .qr-tip { font-size: 10px; color: #9ca3af; line-height: 1.4; }
+
+  /* 标签 */
+  .tabs { display: flex; border-bottom: 1px solid #f3f4f6; }
+  .tab {
+    flex: 1; border: none; background: none;
+    padding: 10px 0; font-size: 13px; color: #9ca3af;
+    cursor: pointer; text-align: center;
+    border-bottom: 2px solid transparent;
+  }
+  .tab-on { color: #6366f1; font-weight: 600; border-bottom-color: #6366f1; }
+
+  .body { max-height: 70vh; overflow-y: auto; padding: 14px 18px; }
+  .summary {
+    padding: 8px 12px; border-radius: 8px;
+    font-size: 12px; font-weight: 500;
+    background: #f9fafb; color: #6b7280; margin-bottom: 10px;
+  }
+  .summary-hot { background: #fefce8; color: #92400e; }
+  .err-block {
+    background: #fef2f2; border: 1px solid #fecaca;
+    border-radius: 8px; padding: 8px 12px;
+    margin-bottom: 10px; font-size: 11px; color: #dc2626; white-space: pre-line;
+  }
+  .empty { text-align: center; color: #d1d5db; padding: 30px 0; font-size: 12px; }
+
+  .msg {
+    display: flex; gap: 8px; padding: 10px 12px;
+    border: 1px solid #f3f4f6; border-radius: 10px;
+    margin-bottom: 8px; position: relative;
+  }
+  .msg::before {
+    content: ""; position: absolute;
+    left: 0; top: 6px; bottom: 6px;
+    width: 3px; border-radius: 2px;
+  }
+  .msg-u::before { background: #6366f1; }
+  .msg-r::before { background: #e5e7eb; }
+
+  .av { flex-shrink: 0; width: 36px; height: 36px; border-radius: 50%; overflow: hidden; }
+  .av img { width: 100%; height: 100%; object-fit: cover; }
+  .av-letter {
+    width: 100%; height: 100%;
+    background: linear-gradient(135deg, #6366f1, #8b5cf6);
+    color: #fff; font-size: 16px; font-weight: 700;
+    display: flex; align-items: center; justify-content: center;
+  }
+
+  .msg-body { flex: 1; min-width: 0; }
+  .msg-l1 { display: flex; align-items: center; gap: 5px; flex-wrap: wrap; margin-bottom: 3px; }
+  .dot { font-size: 9px; font-weight: 700; padding: 1px 6px; border-radius: 4px; }
+  .dot-u { background: #eef2ff; color: #4338ca; }
+  .dot-r { background: #f3f4f6; color: #9ca3af; }
+  .tag { font-size: 9px; font-weight: 600; padding: 1px 7px; border-radius: 8px; }
+  .desc { font-size: 12px; font-weight: 500; color: #374151; line-height: 1.4; word-break: break-all; }
+  .linkinfo { font-size: 10px; color: #9ca3af; margin-top: 2px; font-family: monospace; }
+  .det { display: flex; flex-wrap: wrap; gap: 3px 10px; margin-top: 4px; font-size: 10px; color: #9ca3af; }
+  .det b { font-weight: 600; color: #6b7280; margin-right: 3px; }
+  .det span { font-family: monospace; }
+
+  .reply { margin-top: 8px; }
+  .reply-trig {
+    border: 1px solid #e0e7ff; background: #eef2ff; color: #4338ca;
+    border-radius: 5px; padding: 3px 10px;
+    font-size: 11px; font-weight: 600; cursor: pointer;
+  }
+  .reply-panel { margin-top: 6px; padding: 8px; background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 8px; }
+  .reply-ta {
+    width: 100%; min-height: 40px;
+    border: 1px solid #d1d5db; border-radius: 5px;
+    padding: 6px 8px; font-size: 12px; font-family: inherit; resize: vertical; outline: none;
+  }
+  .reply-ta:focus { border-color: #6366f1; }
+  .reply-actions { display: flex; gap: 4px; margin-top: 6px; justify-content: flex-end; }
+  .reply-status { margin-top: 4px; font-size: 11px; padding: 4px 8px; border-radius: 4px; display: none; }
+  .reply-status.ok { background: #d1fae5; color: #065f46; display: block; }
+  .reply-status.fail { background: #fef2f2; color: #dc2626; display: block; }
+
+  .link-mgr { margin-top: 4px; }
+  .link-add {
+    border: 1px dashed #a5b4fc; background: #eef2ff; color: #4338ca;
+    border-radius: 5px; padding: 3px 8px;
+    font-size: 10px; font-weight: 600; cursor: pointer;
+  }
+  .link-list { margin-top: 3px; }
+  .link-item { display: flex; gap: 5px; font-size: 10px; padding: 2px 0; align-items: center; }
+  .link-item-text { color: #4338ca; font-weight: 600; text-decoration: underline; }
+  .link-item-url { color: #9ca3af; flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .link-item-del { color: #ef4444; cursor: pointer; font-weight: 700; }
+  .link-editor {
+    margin-top: 4px; padding: 6px;
+    background: #fff; border: 1px solid #d1d5db; border-radius: 5px;
+    display: none;
+  }
+  .link-editor input, .link-editor select {
+    width: 100%; border: 1px solid #d1d5db; border-radius: 3px;
+    padding: 4px 6px; font-size: 11px; margin-bottom: 3px; outline: none;
+  }
+
+  .adv { margin-top: 6px; }
+  .adv summary { cursor: pointer; font-size: 10px; font-weight: 600; color: #9ca3af; }
+  .adv summary:hover { color: #6366f1; }
+  .adv-box { margin-top: 4px; padding: 6px; background: #fff; border: 1px solid #e5e7eb; border-radius: 4px; }
+  .adv-row { display: flex; gap: 4px; padding: 2px 0; font-size: 10px; align-items: flex-start; cursor: pointer; }
+  .adv-row b { color: #374151; }
+  .adv-row small { color: #9ca3af; display: block; }
+
+  details.json { margin-top: 6px; }
+  details.json summary { cursor: pointer; font-size: 10px; font-weight: 600; color: #c4c4c4; }
+  details.json summary:hover { color: #6366f1; }
+  details.json pre {
+    margin: 4px 0 0; padding: 8px;
+    background: #f8f9fb; border: 1px solid #f3f4f6; border-radius: 6px;
+    font-size: 10px; font-family: "SF Mono", "Fira Code", monospace;
+    color: #4b5563; line-height: 1.4; white-space: pre-wrap; word-break: break-all;
+    max-height: 180px; overflow-y: auto;
+  }
+
+  .hidden { display: none !important; }
+</style>
+</head>
+<body>
+
+<div class="container">
+  <div class="top">
+    <span class="top-title">📩 消息中心</span>
+    <span class="top-status" id="status"></span>
+    <div class="top-btns">
+      <button class="btn btn-primary" id="btnRefresh">↻ 刷新</button>
+    </div>
+  </div>
+
+  <!-- 配置区 -->
+  <div class="config" id="configSec">
+    <div style="font-weight:700;color:#374151;margin-bottom:8px">登录方式</div>
+
+    <!-- 方式 1：扫码登录 -->
+    <div style="margin-bottom:12px">
+      <div style="font-size:12px;font-weight:600;color:#374151;margin-bottom:6px">① 生成二维码，用 Kimi App 扫码</div>
+      <div class="qr-box" id="qrBox" style="display:none">
+        <div class="qr-canvas-wrap" id="qrWrap"></div>
+        <div class="qr-side">
+          <label>扫码凭证 code</label>
+          <input id="qrCode" readonly placeholder="生成后显示">
+          <label>设备标识 device_id（本地生成，自动）</label>
+          <input id="qrWid" readonly placeholder="自动生成">
+          <div class="qr-tip" id="qrTip">用 Kimi App 扫描左侧二维码，扫出后在手机点确认即可登录。</div>
+        </div>
+      </div>
+      <button class="btn" id="btnGenQr">生成登录二维码</button>
+      <button class="btn" id="btnCancelQr" style="display:none">取消</button>
+      <div class="config-st" id="qrSt"></div>
+    </div>
+
+    <div style="border-top:1px dashed #e5e7eb;padding-top:12px">
+      <div style="font-size:12px;font-weight:600;color:#374151;margin-bottom:6px">② 或粘贴 refresh_token（在 kimi.com 登录页 localStorage 里）</div>
+      <label>refresh_token</label>
+      <textarea id="rfInput" rows="2" placeholder="粘贴 refresh_token…"></textarea>
+      <div class="config-row">
+        <input id="didInput" placeholder="device_id（可选）">
+        <input id="sidInput" placeholder="session_id（可选）">
+      </div>
+      <button class="btn btn-primary" id="btnLogin">保存并登录</button>
+      <div class="config-st" id="loginSt"></div>
+    </div>
+  </div>
+
+  <div class="tabs" id="tabsSec">
+    <button class="tab tab-on" data-tab="moment">社区互动</button>
+    <button class="tab" data-tab="inapp">站内推送</button>
+  </div>
+
+  <div class="body" id="momentBody">
+    <p class="empty">登录成功后点「刷新」加载数据</p>
+  </div>
+
+  <div class="body hidden" id="inappBody"></div>
+</div>
+
+<script>
+(() => {
+  "use strict";
+
+  // ===================== 常量 =====================
+
+  const AUTH_BASE = "https://auth.kimi.com/api";
+  const API_BASE = "https://www.kimi.com/apiv2";
+  const PAGE_SIZE = 50;
+  const STORE_KEY = "kimi_msg_panel";
+
+  const URIS = {
+    refresh:       `${AUTH_BASE}/account.gateway.v1.AuthService/RefreshToken`,
+    createQr:      `${AUTH_BASE}/account.gateway.v1.AuthService/CreateLoginQRCode`,
+    qrStatus:      `${AUTH_BASE}/account.gateway.v1.AuthService/GetLoginQRCodeStatus`,
+    status:        `${API_BASE}/moment.v1.NotificationService/GetReminderStatus`,
+    listNotif:     `${API_BASE}/moment.v1.NotificationService/ListNotification`,
+    listRemind:    `${API_BASE}/moment.v1.NotificationService/ListReminders`,
+    inappList:     `${API_BASE}/kimi.gateway.notification.v1.NotificationService/ListUserNotifications`,
+    userProfile:   `${API_BASE}/moment.v1.UserService/GetUserProfile`,
+    createCmt:     `${API_BASE}/moment.v1.CommentService/CreateComment`,
+  };
+
+  const TYPE_MAP = {
+    NOTIFICATION_TYPE_FAVORITE:"收藏", NOTIFICATION_TYPE_FOLLOW:"关注",
+    NOTIFICATION_TYPE_REPLY_COMMENT:"回复评论", NOTIFICATION_TYPE_UP_COMMENT:"赞了评论",
+    NOTIFICATION_TYPE_UP_MOMENT:"赞了动态", NOTIFICATION_TYPE_COMMENT_MOMENT:"评论动态",
+    NOTIFICATION_TYPE_UNSPECIFIED:"未指定",
+    0:"未指定",1:"收藏",2:"关注",3:"回复评论",4:"赞了评论",5:"赞了动态",6:"评论动态",
+  };
+  const INAPP_MAP = {
+    NOTIFICATION_TYPE_MY_KIMI:"我的 Kimi", NOTIFICATION_TYPE_TASK:"任务",
+    NOTIFICATION_TYPE_SKILL:"技能", NOTIFICATION_TYPE_ACTIVITY:"活动",
+    NOTIFICATION_TYPE_OPERATIONAL:"运营", NOTIFICATION_TYPE_CHAT_STATUS_CHANGED:"聊天状态",
+    NOTIFICATION_TYPE_UNSPECIFIED:"未指定",
+  };
+  const TAG_COLORS = {
+    "收藏":["#fef3c7","#92400e"],"关注":["#d1fae5","#065f46"],
+    "回复评论":["#dbeafe","#1e40af"],"赞了评论":["#fce7f3","#9d174d"],
+    "赞了动态":["#e0e7ff","#3730a3"],"评论动态":["#ede9fe","#5b21b6"],
+    "任务":["#ffedd5","#9a3412"],"活动":["#fef3c7","#78350f"],
+    "运营":["#f3f4f6","#374151"],"技能":["#ccfbf1","#134e4a"],
+    "聊天状态":["#e0f2fe","#075985"],
+  };
+
+  // ===================== 状态 =====================
+
+  let accessToken = "";
+  let refreshToken = "";
+  let deviceId = "";
+  let sessionId = "";
+  let refreshTimer = null;
+
+  // 扫码相关
+  let qrCode = "";
+  let qrPollTimer = null;
+
+  // ===================== 存储 =====================
+
+  function loadCfg() { try { return JSON.parse(localStorage.getItem(STORE_KEY)) || null; } catch { return null; } }
+  function saveCfg() { localStorage.setItem(STORE_KEY, JSON.stringify({ refreshToken, deviceId, sessionId })); }
+
+  // ===================== 请求头 =====================
+
+  function authHeaders() {
+    const h = {
+      "content-type": "application/json",
+      "connect-protocol-version": "1",
+      "r-timezone": "Asia/Shanghai",
+      "x-msh-platform": "web",
+      "x-msh-version": "2.3.0",
+    };
+    if (deviceId) h["x-msh-device-id"] = deviceId;
+    if (sessionId) h["x-msh-session-id"] = sessionId;
+    return h;
+  }
+
+  function bizHeaders() {
+    return {
+      "Content-Type": "application/json",
+      "Accept": "application/json",
+      "Authorization": `Bearer ${accessToken}`,
+      "R-Timezone": "Asia/Shanghai",
+      "x-msh-platform": "web",
+      "x-msh-version": "3.1.0",
+      "X-Language": "zh-CN",
+      ...(deviceId ? { "x-msh-device-id": deviceId } : {}),
+      ...(sessionId ? { "x-msh-session-id": sessionId } : {}),
+    };
+  }
+
+  // ===================== Token =====================
+
+  async function doRefreshToken() {
+    if (!refreshToken) throw new Error("没有 refresh_token");
+    const resp = await fetch(URIS.refresh, {
+      method: "POST",
+      headers: authHeaders(),
+      credentials: "include",
+      body: JSON.stringify({ refresh_token: refreshToken }),
+    });
+    if (!resp.ok) {
+      const t = await resp.text();
+      throw new Error(`刷新失败 ${resp.status}: ${t.slice(0,200)}`);
+    }
+    const data = await resp.json();
+    accessToken = data.accessToken || data.access_token || "";
+    const newRf = data.refreshToken || data.refresh_token || "";
+    if (newRf) refreshToken = newRf;
+    saveCfg();
+    return accessToken;
+  }
+
+  async function ensureToken() {
+    if (accessToken) {
+      try {
+        const p = JSON.parse(atob(accessToken.split(".")[1].replace(/-/g,"+").replace(/_/g,"/")));
+        if (p.exp && Date.now()/1000 < p.exp - 120) return accessToken;
+      } catch {}
+    }
+    return doRefreshToken();
+  }
+
+  function startAutoRefresh() {
+    if (refreshTimer) clearInterval(refreshTimer);
+    refreshTimer = setInterval(() => {
+      doRefreshToken().then(()=>console.log("[面板] token 已刷新"))
+        .catch(e=>console.warn("[面板] 刷新失败:", e.message));
+    }, 14*60*1000);
+  }
+
+  // ===================== API =====================
+
+  async function api(url, body) {
+    const token = await ensureToken();
+    const resp = await fetch(url, {
+      method: "POST",
+      headers: { ...bizHeaders(), "Authorization": `Bearer ${token}` },
+      credentials: "include",
+      body: JSON.stringify(body ?? {}),
+    });
+    const text = await resp.text();
+    let json; try { json = JSON.parse(text); } catch { json = null; }
+    if (!resp.ok) {
+      const e = new Error(`HTTP ${resp.status}`);
+      e.body = json ?? text.slice(0,300);
+      throw e;
+    }
+    return json ?? { raw: text };
+  }
+
+  // ===================== 工具 =====================
+
+  function fmt(v) {
+    if (v == null) return "—";
+    const s = typeof v === "object" ? JSON.stringify(v) : String(v);
+    return s.length > 160 ? s.slice(0,160)+"…" : s;
+  }
+  function esc(s) { const d = document.createElement("div"); d.textContent = s ?? ""; return d.innerHTML; }
+  function getAv(u) {
+    if (!u || typeof u !== "object") return "";
+    if (u.avatarUrl) return u.avatarUrl;
+    if (u.avatar) return typeof u === "string" ? u : (u.avatar.url||"");
+    if (u.avatarImage) return u.avatarImage.thumbnailUrl || u.avatarImage.originUrl || "";
+    if (u.userBase?.avatarImage) return u.userBase.avatarImage.thumbnailUrl || "";
+    return "";
+  }
+  function getNm(u) { if (!u) return ""; return typeof u === "string" ? u : (u.name||u.nickname||u.userId||""); }
+  function getUd(u) { if (!u) return ""; return typeof u === "string" ? u : (u.userId||u.id||""); }
+  function uuid() {
+    if (crypto.randomUUID) return crypto.randomUUID();
+    return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, c => {
+      const r = crypto.getRandomValues(new Uint8Array(1))[0] & 15;
+      const v = c === "x" ? r : (r & 0x3 | 0x8);
+      return v.toString(16);
+    });
+  }
+
+  // ===================== 数据拉取 =====================
+
+  async function loadMoment() {
+    const d = { hasUnread:false, notifications:[], moments:[], comments:[], users:[], reminders:[], errors:[] };
+    try { const r = await api(URIS.status, {}); d.hasUnread = !!r.hasUnread; }
+    catch(e) { d.errors.push("未读状态 → "+e.message+(e.body?" "+fmt(e.body):"")); }
+
+    try {
+      const r = await api(URIS.listNotif, { limit: PAGE_SIZE });
+      d.notifications = r.notifications || [];
+      d.moments = r.moments || [];
+      d.comments = r.comments || [];
+      d.users = r.users || [];
+    } catch(e) { d.errors.push("社区通知 → "+e.message+(e.body?" "+fmt(e.body):"")); }
+
+    try { const r = await api(URIS.listRemind, {}); d.reminders = r.items || []; }
+    catch(e) { d.errors.push("提醒 → "+e.message); }
+
+    const miss = new Set();
+    for (const n of d.notifications) for (const f of (n.fromUsers||[])) {
+      const id = typeof f === "object" ? getUd(f) : f;
+      if (id && !d.users?.some(u=>getUd(u)===id)) miss.add(id);
+    }
+    if (miss.size > 0 && miss.size <= 15) {
+      const ex = await Promise.all([...miss].map(async id => {
+        try { const r = await api(URIS.userProfile, {userId:id}); return r.userBase||r; } catch { return null; }
+      }));
+      d.users = [...(d.users||[]), ...ex.filter(Boolean)];
+    }
+    return d;
+  }
+
+  async function loadInapp() {
+    const d = { unreadCount:0, items:[], errors:[] };
+    try {
+      const r = await api(URIS.inappList, { pageSize: PAGE_SIZE });
+      d.unreadCount = r.unreadCount ?? 0;
+      d.items = r.userNotifications || [];
+    } catch(e) { d.errors.push("站内 → "+e.message+(e.body?" "+fmt(e.body):"")); }
+    return d;
+  }
+
+  // ===================== 描述 =====================
+
+  function describe(n, users, comments, moments) {
+    const type = n.notificationType ?? n.type;
+    const tl = TYPE_MAP[type] ?? String(type);
+    let actor = { name:"", av:"", uid:"" };
+    const from = Array.isArray(n.fromUsers) ? n.fromUsers : [];
+    if (from.length) {
+      const f = from[0];
+      if (typeof f === "object" && f) {
+        actor = { name:getNm(f), av:getAv(f), uid:getUd(f) };
+        const m = users?.find(u=>getUd(u)===getUd(f));
+        if (m) { actor.name=getNm(m)||actor.name; actor.av=getAv(m)||actor.av; }
+      } else {
+        const m = users?.find(u=>getUd(u)===f);
+        actor = m ? { name:getNm(m), av:getAv(m), uid:getUd(m) } : { name:String(f), av:"", uid:String(f) };
+      }
+    }
+    if (!actor.name) actor.name = "有人";
+
+    let mt="", ct="";
+    if (n.momentId && moments?.length) {
+      const m = moments.find(x=>x.id===n.momentId||x.momentId===n.momentId);
+      if (m) mt = m.content?.text||m.text||m.title||"";
+    }
+    if (n.commentId && comments?.length) {
+      const c = comments.find(x=>x.id===n.commentId||x.commentId===n.commentId);
+      if (c) ct = c.content?.text||c.text||"";
+    }
+    const sn=(s,n)=>s.length>n?s.slice(0,n)+"…":s;
+    let desc;
+    switch(tl) {
+      case "收藏": desc=`${actor.name} 收藏了你的动态`; break;
+      case "关注": desc=`${actor.name} 关注了你`; break;
+      case "回复评论": desc=`${actor.name} 回复了你的评论`; break;
+      case "赞了评论": desc=`${actor.name} 赞了你的评论`; break;
+      case "赞了动态": desc=`${actor.name} 赞了你的动态`; break;
+      case "评论动态": desc=`${actor.name} 评论了你的动态`; break;
+      default: desc=`${actor.name} · ${tl}`; break;
+    }
+    if (mt && ["赞了动态","收藏","评论动态"].includes(tl)) desc += `\n动态：「${sn(mt,60)}」`;
+    if (ct && ["评论动态","回复评论","赞了评论"].includes(tl)) desc += `\n评论：「${sn(ct,80)}」`;
+    return { desc, actor, tl, type };
+  }
+
+  // ===================== 渲染 =====================
+
+  function avEl(user) {
+    const w = document.createElement("div");
+    w.className = "av";
+    const url = getAv(user);
+    if (url) {
+      const img = document.createElement("img");
+      img.src = url; img.referrerPolicy = "no-referrer";
+      img.onerror = () => { img.remove(); const l=document.createElement("div");l.className="av-letter";l.textContent=(getNm(user)||"?").slice(0,1).toUpperCase();w.appendChild(l); };
+      w.appendChild(img);
+    } else {
+      const l = document.createElement("div");
+      l.className = "av-letter";
+      l.textContent = (getNm(user)||"?").slice(0,1).toUpperCase();
+      w.appendChild(l);
+    }
+    return w;
+  }
+
+  function makeCard(opts) {
+    const el = document.createElement("div");
+    el.className = `msg ${opts.unread ? "msg-u" : "msg-r"}`;
+    el.appendChild(avEl(opts.user));
+
+    const body = document.createElement("div");
+    body.className = "msg-body";
+
+    const l1 = document.createElement("div"); l1.className = "msg-l1";
+    const dot = document.createElement("span");
+    dot.className = `dot ${opts.unread?"dot-u":"dot-r"}`;
+    dot.textContent = opts.unread ? "未读" : "已读";
+    l1.appendChild(dot);
+    if (opts.tag) {
+      const tg = document.createElement("span"); tg.className="tag";
+      const [bg,fg] = opts.tagColors || ["#f3f4f6","#6b7280"];
+      tg.style.background=bg; tg.style.color=fg; tg.textContent=opts.tag;
+      l1.appendChild(tg);
+    }
+    const d = document.createElement("span"); d.className="desc";
+    d.innerHTML = esc(opts.desc).replace(/\n/g,"<br>");
+    l1.appendChild(d);
+    body.appendChild(l1);
+
+    const lp = [];
+    if (opts.notif?.momentId) lp.push(`动态 #${opts.notif.momentId}`);
+    if (opts.notif?.commentId) lp.push(`评论 #${opts.notif.commentId}`);
+    if (lp.length) { const li=document.createElement("div");li.className="linkinfo";li.textContent="📎 "+lp.join(" → ");body.appendChild(li); }
+
+    if (opts.rows?.length) {
+      const det = document.createElement("div"); det.className="det";
+      for (const [k,v] of opts.rows) { const s=document.createElement("span");s.innerHTML=`<b>${esc(k)}</b> ${esc(v==="—?"?"—":v)}`;det.appendChild(s); }
+      body.appendChild(det);
+    }
+
+    if (opts.replyable && opts.momentId) {
+      body.appendChild(buildReply({ momentId: opts.momentId, targetCommentId: opts.targetCommentId }));
+    }
+
+    if (opts.json != null) {
+      const det = document.createElement("details"); det.className="json";
+      det.innerHTML = `<summary>原始数据</summary><pre>${esc(JSON.stringify(opts.json,null,2))}</pre>`;
+      body.appendChild(det);
+    }
+
+    el.appendChild(body);
+    return el;
+  }
+
+  function buildReply(opts) {
+    const wrap = document.createElement("div"); wrap.className="reply";
+    const trig = document.createElement("button"); trig.className="reply-trig"; trig.textContent="↩ 回复";
+    wrap.appendChild(trig);
+
+    const pn = document.createElement("div"); pn.className="reply-panel"; pn.style.display="none";
+    const ta = document.createElement("textarea"); ta.className="reply-ta"; ta.rows=2; ta.placeholder="写回复内容…（可插入链接）";
+    pn.appendChild(ta);
+
+    const lm = document.createElement("div"); lm.className="link-mgr";
+    const addB = document.createElement("button"); addB.className="link-add"; addB.textContent="+ 插入链接";
+    lm.appendChild(addB);
+    const ll = document.createElement("div"); ll.className="link-list";
+    lm.appendChild(ll);
+    pn.appendChild(lm);
+
+    const ed = document.createElement("div"); ed.className="link-editor";
+    const iUrl = document.createElement("input"); iUrl.placeholder="https://example.com";
+    const iText = document.createElement("input"); iText.placeholder="显示文字（留空则用 URL）";
+    const iType = document.createElement("select");
+    for (const o of ["LINK_TYPE_WEB","LINK_TYPE_MOMENT","LINK_TYPE_UNSPECIFIED",""]) {
+      const opt=document.createElement("option"); opt.value=o; opt.textContent=o||"（不传）";
+      if(o==="LINK_TYPE_WEB")opt.selected=true;
+      iType.appendChild(opt);
+    }
+    const edBtns = document.createElement("div"); edBtns.className="link-editor-btns";
+    const okB=document.createElement("button");okB.textContent="插入";okB.className="btn btn-primary";okB.style.cssText="font-size:10px;padding:2px 8px";
+    const cnB=document.createElement("button");cnB.textContent="取消";cnB.className="btn";cnB.style.cssText="font-size:10px;padding:2px 8px";
+    edBtns.appendChild(okB);edBtns.appendChild(cnB);
+    ed.appendChild(iUrl);ed.appendChild(iText);ed.appendChild(iType);ed.appendChild(edBtns);
+    pn.appendChild(ed);
+
+    const adv = document.createElement("details"); adv.className="adv";
+    adv.innerHTML=`<summary>高级字段配置</summary><div class="adv-box"></div>`;
+    const ab=adv.querySelector(".adv-box"); const ck={};
+    for (const [k,on,ds] of [["type",true,"枚举"],["id",false,"标识"],["text",true,"文本"],["displayText",true,"显示"],["url",true,"地址"],["offset",true,"偏移"],["length",true,"长度"]]) {
+      const row=document.createElement("label");row.className="adv-row";
+      const cb=document.createElement("input");cb.type="checkbox";cb.checked=on;ck[k]=cb;
+      const sp=document.createElement("span");sp.innerHTML=`<b>${k}</b><small>${ds}</small>`;
+      row.appendChild(cb);row.appendChild(sp);ab.appendChild(row);
+    }
+    pn.appendChild(adv);
+
+    const acts=document.createElement("div");acts.className="reply-actions";
+    const sd=document.createElement("button");sd.className="btn btn-primary";sd.textContent="发送";sd.style.cssText="font-size:11px;padding:4px 12px";
+    const cx=document.createElement("button");cx.className="btn";cx.textContent="取消";cx.style.cssText="font-size:11px;padding:4px 12px";
+    acts.appendChild(sd);acts.appendChild(cx);pn.appendChild(acts);
+
+    const st=document.createElement("div");st.className="reply-status";pn.appendChild(st);
+    wrap.appendChild(pn);
+
+    let links=[]; let cursor=0;
+    ta.addEventListener("blur",()=>{cursor=ta.selectionStart;});
+    trig.onclick=()=>{pn.style.display="block";cursor=ta.selectionStart??ta.value.length;ta.focus();};
+    cx.onclick=()=>{pn.style.display="none";links=[];ll.innerHTML="";st.style.display="none";};
+    addB.onclick=()=>{cursor=ta.selectionStart??ta.value.length;ed.style.display="block";iUrl.focus();};
+    cnB.onclick=()=>{ed.style.display="none";iUrl.value="";iText.value="";};
+
+    okB.onclick=()=>{
+      let u=iUrl.value.trim().replace(/\s+/g,"");
+      let dt=iText.value.trim()||u;
+      if(!u)return;
+      const pos=Math.min(cursor,ta.value.length);
+      ta.value=ta.value.slice(0,pos)+dt+ta.value.slice(pos);
+      links.push({url:u,displayText:dt,offset:pos,length:dt.length,type:iType.value});
+      links.sort((a,b)=>a.offset-b.offset);
+      cursor=pos+dt.length;
+      renderLinks();
+      ed.style.display="none";iUrl.value="";iText.value="";
+    };
+
+    function renderLinks(){
+      ll.innerHTML="";
+      links.forEach((lk,i)=>{
+        const it=document.createElement("div");it.className="link-item";
+        it.innerHTML=`<span class="link-item-text">${esc(lk.displayText)}</span><span class="link-item-url">${esc(lk.url)}</span><span class="link-item-del" data-i="${i}">✕</span>`;
+        it.querySelector(".link-item-del").onclick=()=>{
+          const rm=links.splice(i,1)[0];
+          ta.value=ta.value.slice(0,rm.offset)+ta.value.slice(rm.offset+rm.length);
+          links.forEach(l=>{if(l.offset>=rm.offset+rm.length)l.offset-=rm.length;});
+          links.sort((a,b)=>a.offset-b.offset);
+          cursor=Math.max(0,cursor-rm.length);
+          renderLinks();
+        };
+        ll.appendChild(it);
+      });
+    }
+
+    sd.onclick=async()=>{
+      const text=ta.value;
+      if(!text.trim()&&!links.length)return;
+      sd.disabled=true;sd.textContent="发送中…";
+      st.className="reply-status";st.style.display="block";st.textContent="发送中…";
+      try{
+        const req={momentId:opts.momentId,content:{text}};
+        if(opts.targetCommentId)req.targetCommentId=opts.targetCommentId;
+        if(links.length){
+          req.links=links.map(lk=>{
+            const o={};
+            if(ck["type"]?.checked&&lk.type)o.type=lk.type;
+            if(ck["id"]?.checked)o.id="lk_"+Date.now().toString(36);
+            if(ck["text"]?.checked)o.text=lk.displayText;
+            if(ck["displayText"]?.checked)o.displayText=lk.displayText;
+            if(ck["url"]?.checked)o.url=lk.url;
+            if(ck["offset"]?.checked)o.offset=lk.offset;
+            if(ck["length"]?.checked)o.length=lk.length;
+            return o;
+          });
+        }
+        const r=await api(URIS.createCmt,req);
+        st.className="reply-status ok";st.textContent=`✓ 已发送（ID: ${(r.comment||r).id||"未知"}）`;
+        ta.value="";links=[];ll.innerHTML="";
+      }catch(e){
+        st.className="reply-status fail";st.textContent=`✗ ${e.message}${e.body?" → "+fmt(e.body):""}`;
+      }
+      sd.disabled=false;sd.textContent="发送";
+    };
+
+    return wrap;
+  }
+
+  function renderMoment(el, data) {
+    el.innerHTML = "";
+    const s = document.createElement("div");
+    s.className = `summary ${data.hasUnread?"summary-hot":""}`;
+    s.textContent = data.hasUnread ? `● 有未读 · ${data.notifications.length} 条` : `○ 全已读 · ${data.notifications.length} 条`;
+    el.appendChild(s);
+    if (data.errors.length) {
+      const ev = document.createElement("div"); ev.className="err-block";
+      ev.textContent=data.errors.join("\n"); el.appendChild(ev);
+    }
+    if (!data.notifications.length && !data.errors.length) { el.innerHTML='<p class="empty">暂无社区通知</p>'; return; }
+    for (const n of data.notifications) {
+      const read=!!(n.readTime||n.read);
+      const info=describe(n,data.users,data.comments,data.moments);
+      const tc=TAG_COLORS[info.tl]||["#f3f4f6","#6b7280"];
+      el.appendChild(makeCard({
+        unread:!read, user:info.actor, desc:info.desc,
+        tag:info.tl, tagColors:tc, notif:n, replyable:true,
+        momentId:n.momentId, targetCommentId:n.commentId||undefined,
+        rows:[["ID",n.id??["—"]],["时间",n.happenedTime??n.happened_time??["—"]],["已读",n.readTime??["未读"]]],
+        json:n,
+      }));
+    }
+  }
+
+  function renderInapp(el, data) {
+    el.innerHTML = "";
+    const s = document.createElement("div");
+    s.className = `summary ${data.unreadCount>0?"summary-hot":""}`;
+    s.textContent = data.unreadCount>0 ? `● ${data.unreadCount} 未读 · ${data.items.length} 条` : `○ 全已读 · ${data.items.length} 条`;
+    el.appendChild(s);
+    if (data.errors.length) { const ev=document.createElement("div");ev.className="err-block";ev.textContent=data.errors.join("\n");el.appendChild(ev); }
+    if (!data.items?.length && !data.errors.length) { el.innerHTML+='<p class="empty">暂无站内推送</p>'; return; }
+    for (const item of data.items) {
+      const read=!!item.read;
+      const notif=item.notification||{};
+      const tl=INAPP_MAP[notif.type]??String(notif.type??"通知");
+      el.appendChild(makeCard({
+        unread:!read, user:null, desc: notif.title||tl,
+        tag:tl, tagColors:TAG_COLORS[tl]||["#f3f4f6","#6b7280"],
+        rows:[["内容",fmt(notif.content)],["跳转",fmt(notif.deeplink)],["时间",item.createTime??["—"]]],
+        json:item,
+      }));
+    }
+  }
+
+  // ===================== 二维码登录 =====================
+
+  const $ = id => document.getElementById(id);
+
+  // ===================== 二维码库加载（多源 fallback） =====================
+
+  const QR_CDN = [
+    "https://cdn.jsdelivr.net/npm/qrcode@1.5.1/build/qrcode.min.js",
+    "https://fastly.jsdelivr.net/npm/qrcode@1.5.1/build/qrcode.min.js",
+    "https://unpkg.com/qrcode@1.5.1/build/qrcode.min.js",
+  ];
+
+  function loadQrLib() {
+    return new Promise((resolve) => {
+      if (typeof QRCode !== "undefined") return resolve(true);
+      let i = 0;
+      (function tryNext() {
+        if (i >= QR_CDN.length) return resolve(false);
+        const s = document.createElement("script");
+        s.src = QR_CDN[i++];
+        s.onload = () => (typeof QRCode !== "undefined" ? resolve(true) : tryNext());
+        s.onerror = tryNext;
+        document.head.appendChild(s);
+      })();
+    });
+  }
+
+  async function drawQr(text) {
+    const wrap = $("qrWrap");
+    wrap.innerHTML = '<div style="font-size:11px;color:#9ca3af">加载中…</div>';
+    const ok = await loadQrLib();
+    if (!ok) {
+      wrap.innerHTML = '<div style="font-size:10px;color:#dc2626;text-align:center;padding:8px">二维码库加载失败<br>请联网（当前可能无网络）<br>或改用粘贴 refresh_token 方式</div>';
+      return;
+    }
+    // 关键：node-qrcode 的 toCanvas 需要 canvas 元素，不能传 div
+    const canvas = document.createElement("canvas");
+    try {
+      await QRCode.toCanvas(canvas, text, { width: 128, height: 128, margin: 1, errorCorrectionLevel: "M" });
+      wrap.innerHTML = "";
+      wrap.appendChild(canvas);
+    } catch (e) {
+      wrap.innerHTML = `<div style="font-size:10px;color:#dc2626;text-align:center;padding:8px">生成失败：${esc(e.message)}</div>`;
+    }
+  }
+
+  // 本地生成 device_id（8 字节 hex），存 localStorage
+  function getDeviceId() {
+    const key = "kfp_qr_wid";
+    let d = localStorage.getItem(key);
+    if (!d) {
+      const buf = new Uint8Array(8);
+      crypto.getRandomValues(buf);
+      d = "w" + Date.now().toString(36) + Array.from(buf).map(b => b.toString(16).padStart(2, "0")).join("");
+      localStorage.setItem(key, d);
+    }
+    return d;
+  }
+
+  // 扫码接口的请求头（未登录态，不需要 Authorization）
+  function qrAuthHeaders() {
+    return {
+      "Content-Type": "application/json",
+      "x-msh-platform": "web",
+      "x-msh-version": "3.1.0",
+      "X-Language": "zh-CN",
+    };
+  }
+
+  async function genQr() {
+    stopQrPoll();
+    $("qrBox").style.display = "flex";
+    $("btnGenQr").style.display = "none";
+    $("btnCancelQr").style.display = "inline-block";
+    $("qrWid").value = getDeviceId();
+    const st = $("qrSt");
+    st.className = "config-st";
+    st.textContent = "获取二维码中…";
+
+    try {
+      // 1. 调 CreateLoginQRCode 拿 code
+      const r1 = await fetch(URIS.createQr, {
+        method: "POST",
+        headers: qrAuthHeaders(),
+        credentials: "include",
+        body: "{}",
+      });
+      const d1 = await r1.json();
+      const code = d1.code || d1.qrCode || "";
+      if (!code) throw new Error("接口未返回 code（可能被跨域拦截，或接口名/参数不对）");
+
+      $("qrCode").value = code;
+
+      // 2. 拼二维码 URL
+      const wid = getDeviceId();
+      const url = `https://www.kimi.com/wechat/mp/auth?id=${encodeURIComponent(code)}&device_id=${encodeURIComponent(wid)}`;
+
+      // 3. 画二维码
+      await drawQr(url);
+      st.textContent = "请用 Kimi App 扫码";
+
+      // 4. 轮询登录状态
+      startQrPoll(code);
+    } catch (e) {
+      st.textContent = "生成失败：" + e.message;
+      st.className = "config-st err";
+    }
+  }
+
+  function cancelQr() {
+    stopQrPoll();
+    $("qrBox").style.display = "none";
+    $("btnGenQr").style.display = "inline-block";
+    $("btnCancelQr").style.display = "none";
+    $("qrSt").textContent = "";
+    $("qrSt").className = "config-st";
+  }
+
+  // 轮询 GetLoginQRCodeStatus
+  function startQrPoll(code) {
+    stopQrPoll();
+    const st = $("qrSt");
+    const tip = $("qrTip");
+    st.textContent = "等待扫码…";
+    st.className = "config-st";
+    const deadline = Date.now() + 5 * 60 * 1000; // 5 分钟
+
+    qrPollTimer = setInterval(async () => {
+      if (Date.now() > deadline) {
+        stopQrPoll();
+        st.textContent = "⏱ 二维码已过期，请重新生成";
+        st.className = "config-st err";
+        return;
+      }
+      try {
+        const r = await fetch(URIS.qrStatus, {
+          method: "POST",
+          headers: qrAuthHeaders(),
+          credentials: "include",
+          body: JSON.stringify({ code }),
+        });
+        const d = await r.json();
+        const status = String(d.status || d.state || "").toUpperCase();
+
+        if (status.includes("SUCCESS")) {
+          stopQrPoll();
+          accessToken = d.accessToken || d.access_token || "";
+          refreshToken = d.refreshToken || d.refresh_token || "";
+          deviceId = getDeviceId();
+          saveCfg();
+          onLoginSuccess("扫码登录成功");
+        } else if (status.includes("SCANNED")) {
+          st.textContent = "已扫码，请在手机上点确认";
+          if (tip) tip.textContent = "手机已扫码，点一下确认登录。";
+        } else if (status.includes("EXPIRED")) {
+          stopQrPoll();
+          st.textContent = "二维码已过期，请重新生成";
+          st.className = "config-st err";
+        } else {
+          st.textContent = "等待扫码…";
+        }
+      } catch (e) {
+        // 网络/CORS 抖动，忽略继续轮询
+      }
+    }, 1200);
+  }
+
+  function stopQrPoll() {
+    if (qrPollTimer) { clearInterval(qrPollTimer); qrPollTimer = null; }
+  }
+
+  function onLoginSuccess(msg) {
+    stopQrPoll();
+    cancelQr();
+    $("configSec").classList.add("hidden");
+    $("loginSt").textContent = msg;
+    $("loginSt").className = "config-st ok";
+    startAutoRefresh();
+    refreshData();
+  }
+
+  // ===================== 主逻辑 =====================
+
+  // 标签切换
+  document.querySelectorAll(".tab").forEach(t => {
+    t.onclick = () => {
+      document.querySelectorAll(".tab").forEach(x=>x.className="tab");
+      t.className = "tab tab-on";
+      $("momentBody").className = t.dataset.tab==="moment" ? "body" : "body hidden";
+      $("inappBody").className = t.dataset.tab==="inapp" ? "body" : "body hidden";
+    };
+  });
+
+  // 二维码按钮
+  $("btnGenQr").onclick = genQr;
+  $("btnCancelQr").onclick = cancelQr;
+
+  // 粘贴 token 登录
+  $("btnLogin").onclick = async () => {
+    const rf = $("rfInput").value.trim();
+    const did = $("didInput").value.trim();
+    const sid = $("sidInput").value.trim();
+    const st = $("loginSt");
+    if (rf) refreshToken = rf;
+    if (did) deviceId = did;
+    if (sid) sessionId = sid;
+    if (!refreshToken) { st.textContent="请粘贴 refresh_token"; st.className="config-st err"; return; }
+    st.textContent="登录中…"; st.className="config-st";
+    try {
+      await doRefreshToken();
+      saveCfg();
+      onLoginSuccess("登录成功，token 已保存");
+    } catch (e) {
+      st.textContent=`✗ ${e.message}`; st.className="config-st err";
+    }
+  };
+
+  // 刷新
+  $("btnRefresh").onclick = async () => {
+    const btn = $("btnRefresh");
+    btn.disabled = true;
+    $("status").textContent = "加载中…";
+    $("momentBody").innerHTML = '<p class="empty">拉取中…</p>';
+    $("inappBody").innerHTML = "";
+    try {
+      await ensureToken();
+      const [md, id] = await Promise.all([loadMoment(), loadInapp()]);
+      renderMoment($("momentBody"), md);
+      renderInapp($("inappBody"), id);
+      $("status").textContent = `${md.notifications.length+id.items.length} 条`;
+    } catch (e) {
+      $("momentBody").innerHTML = `<div class="err-block">${esc(e.message)}</div>`;
+      $("status").textContent = "失败";
+    }
+    btn.disabled = false;
+  };
+
+  async function refreshData() {
+    try {
+      await ensureToken();
+      const [md, id] = await Promise.all([loadMoment(), loadInapp()]);
+      renderMoment($("momentBody"), md);
+      renderInapp($("inappBody"), id);
+      $("status").textContent = `${md.notifications.length+id.items.length} 条`;
+    } catch (e) {
+      $("configSec").classList.remove("hidden");
+      $("status").textContent = "token 失效，请重新登录";
+    }
+  }
+
+  // 自动登录
+  (function init() {
+    const cfg = loadCfg();
+    if (cfg?.refreshToken) {
+      refreshToken = cfg.refreshToken;
+      deviceId = cfg.deviceId || "";
+      sessionId = cfg.sessionId || "";
+      $("rfInput").value = "（已保存）";
+      $("configSec").classList.add("hidden");
+      startAutoRefresh();
+      refreshData();
+    }
+  })();
+})();
+</script>
+</body>
+</html>
