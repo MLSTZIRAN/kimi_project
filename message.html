@@ -1,0 +1,723 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#1B6E43">
+<title>消息中心 · Kimi</title>
+<style>
+:root{--p:#1b6e43;--on-p:#fff;--pc:#c9edd6;--on-pc:#0b3d22;--sc:#dcefe1;--on-sc:#1b3a26;--tc:#c4ece3;--on-tc:#0a3b31;--sf:#edf3ee;--scl:#e8f0e9;--sc2:#e1ece3;--sc3:#e1ede3;--on:#16261b;--ov:#4b6353;--ol:#c8d9cd;--olv:#deeae0;--er:#ba1a1a;--ec:#ffdad6;--sh:0 1px 2px rgba(15,45,25,.07),0 2px 10px rgba(15,45,25,.05)}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+body{font-family:Roboto,-apple-system,"PingFang SC","Noto Sans SC","Helvetica Neue",sans-serif;background:var(--sf);color:var(--on);font-size:14px;min-height:100vh;-webkit-font-smoothing:antialiased}
+.shell{max-width:600px;margin:0 auto;padding:12px 16px 40px}
+.bar{position:sticky;top:0;z-index:6;display:flex;align-items:center;gap:10px;padding:12px 2px 14px;background:var(--sf)}
+.bar-l{display:flex;align-items:center;gap:10px;flex:1;min-width:0}
+.mark{width:40px;height:40px;flex:none;border-radius:14px;background:var(--pc);color:var(--p);display:grid;place-items:center;font-size:22px}
+.ttl{font-size:19px;font-weight:700;letter-spacing:.2px;line-height:1.2}
+.sub{font-size:11px;color:var(--ov);margin-top:2px}
+.bar-r{display:flex;align-items:center;gap:8px}
+.pill{background:var(--pc);color:var(--on-pc);border-radius:999px;padding:5px 12px;font-size:11px;font-weight:700;white-space:nowrap}
+.icon{width:38px;height:38px;border:0;border-radius:50%;background:var(--sc2);color:var(--p);font-size:19px;cursor:pointer;line-height:1}
+.icon:hover{background:var(--sc3)}
+button{font-family:inherit}
+.btn-f,.btn-t,.btn-x{border:0;border-radius:999px;padding:10px 20px;font-size:13px;font-weight:600;cursor:pointer}
+.btn-f{background:var(--p);color:var(--on-p);box-shadow:var(--sh)}
+.btn-f:hover{background:#145a36}
+.btn-f:disabled{opacity:.45;cursor:not-allowed}
+.btn-t{background:var(--sc);color:var(--on-sc)}
+.btn-x{background:transparent;color:var(--p)}
+.btn-x:hover{background:var(--sc2)}
+.mini{font-size:11px;padding:7px 12px}
+.card{background:var(--scl);border-radius:20px;padding:18px;box-shadow:var(--sh);margin-bottom:14px}
+.cfg-head{display:flex;align-items:center;gap:10px;margin-bottom:12px}
+.step{width:24px;height:24px;flex:none;border-radius:50%;background:var(--p);color:#fff;display:grid;place-items:center;font-size:12px;font-weight:700}
+.cfg-head b{display:block;font-size:13px}
+.cfg-head small{display:block;font-size:11px;color:var(--ov);margin-top:2px}
+.divider{height:1px;background:var(--olv);margin:16px 0}
+label{display:block;font-size:11px;font-weight:600;color:var(--ov);margin:0 0 4px}
+input,textarea,select{width:100%;background:var(--sf);border:1px solid var(--ol);border-radius:12px;padding:9px 11px;font-size:12px;color:var(--on);outline:none;font-family:inherit}
+input:focus,textarea:focus,select:focus{border:2px solid var(--p);padding:8px 10px}
+textarea{resize:vertical;font-family:ui-monospace,"SF Mono",Menlo,monospace;font-size:11px;line-height:1.5;margin-bottom:8px}
+input[readonly]{background:var(--sc2);color:var(--ov);font-family:ui-monospace,Menlo,monospace;font-size:10px}
+.row{display:flex;gap:8px;align-items:center;margin-bottom:8px;flex-wrap:wrap}
+.row>input{flex:1;min-width:120px}
+.st{font-size:11px;min-height:16px;margin-top:8px;line-height:1.5}
+.st.ok{color:var(--p);font-weight:600}.st.err{color:var(--er)}.st.wait{color:#8a5a00}
+.qr{display:flex;gap:14px;align-items:flex-start;margin-bottom:12px}
+.qr-canvas{width:148px;height:148px;flex:none;background:#fff;border:1px solid var(--olv);border-radius:16px;padding:8px;box-shadow:var(--sh);display:grid;place-items:center;overflow:hidden}
+.qr-canvas svg{width:100%;height:100%;display:block}
+.qr-side{flex:1;min-width:0;display:flex;flex-direction:column;gap:3px}
+.hint{font-size:11px;color:var(--ov);line-height:1.55;margin-top:6px}
+.count{font-size:11px;font-weight:700;color:var(--ov);font-variant-numeric:tabular-nums;margin-top:2px}
+.count.warn,.count.expired{color:var(--er)}
+.howto{font-size:11px;color:var(--ov);line-height:1.7;background:var(--sf);border:1px solid var(--olv);border-radius:12px;padding:10px 12px;margin-bottom:10px}
+.howto b{color:var(--p)}
+.howto code{font-family:ui-monospace,Menlo,monospace;font-size:10.5px;background:var(--sc2);border-radius:4px;padding:1px 4px}
+.bm{display:inline-flex;align-items:center;border:1px dashed var(--p);background:var(--pc);color:var(--on-pc);border-radius:999px;padding:7px 14px;font-size:11px;font-weight:700;cursor:grab;text-decoration:none;margin:2px 6px 6px 0}
+.bm:active{cursor:grabbing}
+.embed{width:100%;height:420px;border:1px dashed var(--ol);border-radius:14px;background:#fff;display:block;margin-top:8px}
+.embed-bar{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+.embed-warn{font-size:10.5px;line-height:1.6;color:var(--ov);background:var(--sc2);border-radius:10px;padding:8px 10px;margin-top:8px}
+.acct-wrap{position:relative}
+.acct-btn{display:flex;align-items:center;gap:5px;border:0;background:var(--pc);color:var(--on-pc);border-radius:999px;padding:8px 12px;font-size:11px;font-weight:700;cursor:pointer;max-width:124px}
+.acct-btn .n{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.acct-menu{position:absolute;right:0;top:calc(100% + 8px);z-index:20;width:252px;background:var(--sf);border:1px solid var(--olv);border-radius:18px;box-shadow:0 12px 34px rgba(15,45,25,.18);padding:10px}
+.acct-menu h4{font-size:11px;color:var(--ov);font-weight:600;margin:2px 4px 8px}
+.acct-item{display:flex;align-items:center;gap:6px;padding:9px 10px;border-radius:12px;margin-bottom:4px;background:var(--scl);cursor:pointer;transition:background .2s}
+.acct-item:hover{background:var(--sc2)}
+.acct-item.cur{background:var(--pc);color:var(--on-pc)}
+.acct-item .info{flex:1;min-width:0}
+.acct-item .info b{display:block;font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.acct-item .info small{display:block;font-size:10px;opacity:.7;font-family:ui-monospace,Menlo,monospace;margin-top:2px}
+.acct-item .op{border:0;background:transparent;color:inherit;font-size:12px;cursor:pointer;opacity:.65;padding:2px 4px}
+.acct-item .op:hover{opacity:1}
+.acct-add{width:100%;border:1px dashed var(--p);background:transparent;color:var(--p);border-radius:12px;padding:9px;font-size:11px;font-weight:700;cursor:pointer;margin-top:4px}
+.tabs{position:relative;display:flex;background:var(--sc2);border-radius:999px;padding:4px;margin-bottom:14px;isolation:isolate}
+.tab-ind{position:absolute;z-index:0;top:4px;left:4px;width:calc(50% - 4px);height:calc(100% - 8px);border-radius:999px;background:var(--p);box-shadow:var(--sh);transition:transform .34s cubic-bezier(.22,.61,.36,1)}
+.tab{position:relative;z-index:1;flex:1;border:0;background:transparent;border-radius:999px;padding:10px;font-size:13px;font-weight:600;color:var(--ov);cursor:pointer;transition:color .26s ease}
+.tab.on{color:#fff}
+.viewport{overflow:hidden;transition:height .3s cubic-bezier(.22,.61,.36,1)}
+.track{display:flex;align-items:flex-start;width:200%;transition:transform .34s cubic-bezier(.22,.61,.36,1);will-change:transform}
+.pane{width:50%;flex:none;min-width:0}
+.list{min-height:120px}
+.sum{display:flex;align-items:center;gap:8px;background:var(--pc);color:var(--on-pc);border-radius:14px;padding:10px 14px;font-size:12px;font-weight:700;margin-bottom:12px}
+.sum.calm{background:var(--sc2);color:var(--ov)}
+.sum .rst{margin-left:auto;border:0;background:transparent;color:inherit;font-family:inherit;font-size:11px;font-weight:700;text-decoration:underline;cursor:pointer;opacity:.8;white-space:nowrap}
+.since{display:flex;align-items:center;gap:8px;margin:2px 0 12px;font-size:11px;color:var(--on-pc);background:var(--pc);border-radius:12px;padding:9px 12px;line-height:1.5;font-weight:600}
+.since b{font-weight:800}
+.since .ln{flex:1;height:1px;background:var(--p);opacity:.32}
+.errbox{background:var(--ec);color:var(--er);border-radius:12px;padding:10px 12px;font-size:11px;line-height:1.6;white-space:pre-line;margin-bottom:10px}
+.empty{text-align:center;color:var(--ov);font-size:12px;padding:44px 12px;line-height:1.7}
+.msg{position:relative;display:flex;gap:12px;padding:14px;border-radius:18px;background:var(--scl);box-shadow:var(--sh);margin-bottom:10px}
+.av{position:relative;width:40px;height:40px;flex:none;border-radius:50%;background:linear-gradient(135deg,var(--p),#0f6b5c);color:#fff;display:grid;place-items:center;font-size:16px;font-weight:700;overflow:hidden}
+.av img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.av.sys{border-radius:14px;background:var(--pc);color:var(--p)}
+.body{flex:1;min-width:0}
+.head{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:5px}
+.name{font-size:13px;font-weight:700;max-width:55%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.chip{font-size:10px;font-weight:700;padding:2px 8px;border-radius:8px;background:var(--pc);color:var(--on-pc);white-space:nowrap}
+.chip.alt{background:var(--tc);color:var(--on-tc)}
+.time{margin-left:auto;font-size:11px;color:var(--ov);white-space:nowrap;font-variant-numeric:tabular-nums}
+.desc{font-size:13.5px;line-height:1.6;word-break:break-word}
+.content{font-size:12px;color:var(--ov);line-height:1.55;margin-top:4px;word-break:break-word}
+.meta{font-size:10.5px;color:var(--ov);margin-top:7px;line-height:1.5;word-break:break-all;opacity:.85}
+.reply{margin-top:10px}
+.reply-trig{border:0;background:var(--sc);color:var(--on-sc);border-radius:999px;padding:6px 14px;font-size:11px;font-weight:700;cursor:pointer}
+.reply-trig:hover{background:var(--sc3)}
+.panel{margin-top:8px;padding:10px;background:var(--sf);border:1px solid var(--olv);border-radius:14px}
+.ta{width:100%;min-height:44px;border:1px solid var(--ol);border-radius:12px;padding:9px 11px;font-size:12px;font-family:inherit;resize:vertical;outline:none;background:var(--sf);color:var(--on)}
+.ta:focus{border:2px solid var(--p);padding:8px 10px}
+.link-add{border:1px dashed var(--p);background:var(--pc);color:var(--on-pc);border-radius:999px;padding:4px 10px;font-size:10px;font-weight:700;cursor:pointer;margin-top:8px}
+.link-list{margin-top:6px}
+.link-item{display:flex;align-items:center;gap:6px;font-size:10.5px;padding:4px 0;color:var(--ov)}
+.link-item b{color:var(--p);font-weight:700}
+.link-item span.u{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.link-item .del{color:var(--er);cursor:pointer;font-weight:700}
+.editor{margin-top:8px;padding:12px;background:var(--scl);border:1px solid var(--olv);border-radius:16px;box-shadow:var(--sh)}
+.ed-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.ed-title{font-size:11px;font-weight:800;color:var(--p);letter-spacing:.4px}
+.ed-x{border:0;background:var(--sc2);color:var(--ov);border-radius:50%;width:22px;height:22px;cursor:pointer;display:grid;place-items:center;padding:0}
+.ed-x svg.ic{width:12px;height:12px;margin:0;vertical-align:0}
+.ed-x:hover{background:var(--sc3);color:var(--p)}
+.ed-seg{position:relative;display:flex;gap:0;background:var(--sc2);border-radius:999px;padding:3px;margin-bottom:10px;isolation:isolate}
+.ed-ind{position:absolute;z-index:0;top:3px;left:3px;width:calc(50% - 3px);height:calc(100% - 6px);border-radius:999px;background:var(--p);box-shadow:var(--sh);transition:transform .34s cubic-bezier(.22,.61,.36,1)}
+.ed-opt{position:relative;z-index:1;flex:1;border:0;background:transparent;border-radius:999px;padding:7px 2px;font-size:10px;font-weight:700;color:var(--ov);cursor:pointer;white-space:nowrap;transition:color .26s ease}
+.ed-opt.on{color:#fff}
+.editor label{color:var(--ov);font-size:10px;margin:0 0 4px;font-weight:600}
+.editor input,.editor select{margin-bottom:8px;font-size:11px;padding:8px 10px;border-radius:10px}
+.editor input:focus{border:2px solid var(--p);padding:7px 9px}
+.acts{display:flex;gap:6px;justify-content:flex-end;margin-top:8px}
+.acts .btn-f,.acts .btn-x{padding:7px 14px;font-size:11px}
+.status{margin-top:8px;font-size:11px;padding:8px 10px;border-radius:10px;line-height:1.6;white-space:pre-line}
+.status.ok{background:var(--pc);color:var(--on-pc)}
+.status.fail{background:var(--ec);color:var(--er)}
+.mask{position:fixed;inset:0;z-index:99;background:rgba(10,30,18,.45);display:flex;align-items:center;justify-content:center;padding:20px}
+.modal{width:100%;max-width:320px;background:var(--sf);border-radius:24px;padding:22px;box-shadow:0 12px 40px rgba(0,0,0,.2)}
+.modal h3{font-size:17px;margin-bottom:8px}
+.modal p{font-size:12px;color:var(--ov);line-height:1.7;margin-bottom:18px}
+.modal .acts{gap:8px}
+.btn-danger{background:var(--er);color:#fff;border:0;border-radius:999px;padding:9px 18px;font-size:12px;font-weight:700;cursor:pointer}
+svg.ic{width:1em;height:1em;display:inline-block;vertical-align:-.14em;flex:none}
+.mark svg.ic,.icon svg.ic{width:21px;height:21px;vertical-align:0}
+.mark svg.ic{width:23px;height:23px}
+.acct-btn svg.ic{width:13px;height:13px;vertical-align:0}
+.btn-f svg.ic,.btn-t svg.ic,.btn-x svg.ic,.bm svg.ic,.reply-trig svg.ic,.link-add svg.ic,.acct-add svg.ic,.acct-item .op svg.ic,.link-item .del svg.ic{width:13px;height:13px;margin-right:3px}
+.st svg.ic,.status svg.ic,.count svg.ic,.sum svg.ic,.since svg.ic{margin-right:4px}
+.sum svg.ic,.since svg.ic{width:12px;height:12px}
+.modal label{margin-top:10px}
+.modal input,.modal textarea{margin-bottom:10px}
+.modal textarea{min-height:58px}
+.modal.wide{max-width:400px;max-height:88vh;overflow-y:auto;padding:20px}
+.modal.wide p{margin-bottom:10px;font-size:11.5px}
+.m-tabs{position:relative;display:flex;background:var(--sc2);border-radius:999px;padding:4px;margin:10px 0 12px;isolation:isolate}
+.m-ind{position:absolute;z-index:0;top:4px;left:4px;width:calc(33.333% - 4px);height:calc(100% - 8px);border-radius:999px;background:var(--p);box-shadow:var(--sh);transition:transform .3s cubic-bezier(.22,.61,.36,1)}
+.m-tab{position:relative;z-index:1;flex:1;border:0;background:transparent;border-radius:999px;padding:8px 4px;font-size:11px;font-weight:700;color:var(--ov);cursor:pointer;white-space:nowrap;transition:color .24s}
+.m-tab.on{color:#fff}
+.m-pane{background:var(--scl);border:1px solid var(--olv);border-radius:14px;padding:12px;margin-bottom:10px}
+.m-pane label{font-size:10.5px;margin-top:0}
+.m-pane textarea{min-height:52px;font-size:10.5px;margin-bottom:6px}
+.m-pane input{font-size:10.5px;padding:7px 9px;margin-bottom:6px}
+.m-qr{display:flex;gap:12px;align-items:flex-start;margin-bottom:10px}
+.m-qr-canvas{width:112px;height:112px;flex:none;background:#fff;border:1px solid var(--olv);border-radius:12px;padding:6px;display:grid;place-items:center;overflow:hidden}
+.m-qr-canvas svg{width:100%;height:100%;display:block}
+.m-qr-side{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+.m-qr-side input{font-family:ui-monospace,Menlo,monospace;font-size:9.5px}
+.m-hint{font-size:10.5px;color:var(--ov);line-height:1.6;margin:6px 0 0}
+.m-row{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+.m-status{font-size:10.5px;line-height:1.5;min-height:15px;margin-top:6px}
+.m-note{font-size:10px;color:var(--ov);line-height:1.6;background:var(--sc2);border-radius:10px;padding:8px 10px;margin:0 0 8px}
+.m-note code{font-family:ui-monospace,Menlo,monospace;font-size:9.5px}
+.m-iframe{width:100%;height:210px;border:1px dashed var(--ol);border-radius:12px;background:#fff;display:block;margin-top:8px}
+.m-embed-row{display:flex;gap:6px;align-items:center;margin-top:8px;flex-wrap:wrap}
+.m-embed-row input{flex:1;min-width:100px;font-family:ui-monospace,Menlo,monospace;font-size:9.5px;padding:6px 8px;margin:0}
+#btnLogout{white-space:nowrap;font-size:11px;padding:7px 10px}
+.pill{max-width:92px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.acct-none{font-size:11px;color:var(--ov);padding:8px 4px;line-height:1.6}
+.embed-note{font-size:10.5px;line-height:1.6;color:var(--ov);flex:1;min-width:140px}
+.embed-url{display:flex;gap:6px;align-items:center;margin-top:8px}
+.embed-url input{flex:1;min-width:0;font-family:ui-monospace,Menlo,monospace;font-size:10.5px}
+.embed-warn b{color:var(--p)}
+.embed-warn code{font-family:ui-monospace,Menlo,monospace;font-size:10px;background:var(--sc2);border-radius:4px;padding:1px 4px}
+.hidden,[hidden]{display:none!important}
+@media(max-width:420px){.shell{padding:10px 12px 32px}.qr-canvas{width:130px;height:130px}.pill{max-width:64px;overflow:hidden;text-overflow:ellipsis}.embed{height:360px}.acct-menu{right:-46px;width:236px}.bar-r{gap:5px}.acct-btn{max-width:92px;padding:7px 9px}#btnLogout{padding:6px 8px;font-size:10.5px}}
+</style>
+<script>
+/* QR Code generator — compact byte-mode core (EC=M), based on Kazuhiko Arase's qrcode-generator, MIT License. SVG only, no CDN. */
+const QR=(()=>{
+const E=new Uint8Array(512),L=new Uint8Array(256);let x=1;
+for(let i=0;i<255;i++){E[i]=x;L[x]=i;x<<=1;if(x&256)x^=0x11d}for(let i=255;i<512;i++)E[i]=E[i-255];
+const mul=(a,b)=>a&&b?E[L[a]+L[b]]:0,bl=n=>{let d=0;while(n){d++;n>>>=1}return d};
+const RS=[[1,26,16],[1,44,28],[1,70,44],[2,50,32],[2,67,43],[4,43,27],[4,49,31],[2,60,38,2,61,39],[3,58,36,2,59,37],[4,69,43,1,70,44],[1,80,50,4,81,51],[6,58,36,2,59,37],[8,59,37,1,60,38],[4,64,40,5,65,41],[5,65,41,5,66,42],[7,73,45,3,74,46],[10,74,46,1,75,47],[9,69,43,4,70,44],[3,70,44,11,71,45],[3,67,41,13,68,42],[17,68,42],[17,74,46],[4,75,47,14,76,48],[6,73,45,14,74,46],[8,75,47,13,76,48],[19,74,46,4,75,47],[22,73,45,3,74,46],[3,73,45,23,74,46],[21,73,45,7,74,46],[19,75,47,10,76,48],[2,74,46,29,75,47],[10,74,46,23,75,47],[14,74,46,21,75,47],[14,74,46,23,75,47],[12,75,47,26,76,48],[6,75,47,34,76,48],[29,74,46,14,75,47],[13,74,46,32,75,47],[40,75,47,7,76,48],[18,75,47,31,76,48]];
+const AL=[[],[6,18],[6,22],[6,26],[6,30],[6,34],[6,22,38],[6,24,42],[6,26,46],[6,28,50],[6,30,54],[6,32,58],[6,34,62],[6,26,46,66],[6,26,48,70],[6,26,50,74],[6,30,54,78],[6,30,56,82],[6,30,58,86],[6,34,62,90],[6,28,50,72,94],[6,26,50,74,98],[6,30,54,78,102],[6,28,54,80,106],[6,32,58,84,110],[6,30,58,86,114],[6,34,62,90,118],[6,26,50,74,98,122],[6,30,54,78,102,126],[6,26,52,78,104,130],[6,30,56,82,108,134],[6,34,60,86,112,138],[6,30,58,86,114,142],[6,34,62,90,118,146],[6,30,54,78,102,126,150],[6,24,50,76,102,128,154],[6,28,54,80,106,132,158],[6,32,58,84,110,136,162],[6,26,54,82,110,138,166],[6,30,58,86,114,142,170]];
+const MK=[(i,j)=>(i+j)%2===0,(i,j)=>i%2===0,(i,j)=>j%3===0,(i,j)=>(i+j)%3===0,(i,j)=>(Math.floor(i/2)+Math.floor(j/3))%2===0,(i,j)=>(i*j)%2+(i*j)%3===0,(i,j)=>((i*j)%2+(i*j)%3)%2===0,(i,j)=>((i*j)%3+(i+j)%2)%2===0];
+function gp(n){let p=[1];for(let i=0;i<n;i++){const a=E[i],q=new Array(p.length+1).fill(0);for(let j=0;j<p.length;j++){q[j]^=p[j];q[j+1]^=mul(p[j],a)}p=q}return p}
+function ecc(d,g){const n=g.length-1,r=new Array(n).fill(0);for(const b of d){const f=b^r[0];r.shift();r.push(0);for(let i=0;i<n;i++)r[i]^=mul(g[i+1],f)}return r}
+function cw(t,v){const s=[...new TextEncoder().encode(t)],g=RS[v-1];let cap=0;for(let i=0;i<g.length;i+=3)cap+=g[i]*g[i+2];
+const b=[],put=(n,l)=>{for(let i=l-1;i>=0;i--)b.push((n>>>i)&1)};put(4,4);put(s.length,v<10?8:16);for(const x of s)put(x,8);
+for(let i=0;i<Math.min(4,cap*8-b.length);i++)b.push(0);while(b.length%8)b.push(0);
+const data=[];for(let i=0;i<b.length;i+=8){let z=0;for(let k=0;k<8;k++)z=(z<<1)|b[i+k];data.push(z)}
+for(let i=0;data.length<cap;i++)data.push(i%2?0x11:0xEC);
+let off=0;const dc=[],ec=[];for(let i=0;i<g.length;i+=3)for(let c=0;c<g[i];c++){const d=data.slice(off,off+g[i+2]);off+=g[i+2];dc.push(d);ec.push(ecc(d,gp(g[i+1]-g[i+2])))}
+const out=[];for(let i=0;i<Math.max(...dc.map(d=>d.length));i++)for(const d of dc)if(i<d.length)out.push(d[i]);
+for(let i=0;i<ec[0].length;i++)for(const e of ec)out.push(e[i]);return out}
+function base(n,v,mask){const m=Array.from({length:n},()=>new Array(n).fill(null));
+const f=(r,c)=>{for(let i=-1;i<=7;i++)for(let j=-1;j<=7;j++){const R=r+i,C=c+j;if(R<0||R>=n||C<0||C>=n)continue;m[R][C]=(i>=0&&i<=6&&(j===0||j===6))||(j>=0&&j<=6&&(i===0||i===6))||(i>=2&&i<=4&&j>=2&&j<=4)}};
+f(0,0);f(n-7,0);f(0,n-7);
+for(const r of AL[v-1])for(const c of AL[v-1]){if(m[r][c]!==null)continue;for(let i=-2;i<=2;i++)for(let j=-2;j<=2;j++)m[r+i][c+j]=i===-2||i===2||j===-2||j===2||(i===0&&j===0)}
+for(let i=8;i<n-8;i++){if(m[i][6]===null)m[i][6]=i%2===0;if(m[6][i]===null)m[6][i]=i%2===0}
+let d=mask<<10;while(bl(d)-bl(0x537)>=0)d^=0x537<<(bl(d)-bl(0x537));const fm=((mask<<10)|d)^0x5412;
+for(let i=0;i<15;i++){const on=((fm>>>i)&1)===1;if(i<6)m[i][8]=on;else if(i<8)m[i+1][8]=on;else m[n-15+i][8]=on;if(i<8)m[8][n-i-1]=on;else if(i<9)m[8][7]=on;else m[8][14-i]=on}
+m[n-8][8]=true;
+if(v>=7){let b=v<<12;while(bl(b)-bl(0x1f25)>=0)b^=0x1f25<<(bl(b)-bl(0x1f25));const vi=(v<<12)|b;for(let i=0;i<18;i++){const on=((vi>>>i)&1)===1;m[Math.floor(i/3)][i%3+n-11]=on;m[i%3+n-11][Math.floor(i/3)]=on}}
+return m}
+function place(m,data,mask){const n=m.length;let inc=-1,row=n-1,bit=7,byte=0;
+for(let col=n-1;col>0;col-=2){if(col===6)col--;while(true){for(let c=0;c<2;c++){if(m[row][col-c]===null){let dark=byte<data.length?((data[byte]>>>bit)&1)===1:false;if(MK[mask](row,col-c))dark=!dark;m[row][col-c]=dark;if(--bit===-1){byte++;bit=7}}}row+=inc;if(row<0||row>=n){row-=inc;inc=-inc;break}}}}
+function pen(m){const n=m.length;let p=0,lines=[];for(let i=0;i<n;i++){lines.push(m[i]);lines.push(m.map(r=>r[i]))}
+for(const a of lines){let run=1;for(let i=1;i<n;i++){if(a[i]===a[i-1])run++;else{if(run>=5)p+=3+run-5;run=1}}if(run>=5)p+=3+run-5;for(let i=0;i<=n-11;i++){const s=a.slice(i,i+11).map(b=>b?1:0).join("");if(s==="10111010000"||s==="00001011101")p+=40}}
+for(let r=0;r<n-1;r++)for(let c=0;c<n-1;c++){const v=m[r][c];if(v===m[r][c+1]&&v===m[r+1][c]&&v===m[r+1][c+1])p+=3}
+let dark=0;for(const row of m)for(const v of row)if(v)dark++;return p+Math.floor(Math.abs(dark*100/(n*n)-50)/5)*10}
+function matrix(t){const s=[...new TextEncoder().encode(t)];let v=1;for(;v<=40;v++){let cap=0,g=RS[v-1];for(let i=0;i<g.length;i+=3)cap+=g[i]*g[i+2];if(4+(v<10?8:16)+s.length*8<=cap*8)break}if(v>40)throw Error("二维码内容过长");
+const data=cw(t,v),n=v*4+17;let best=0,m=null;for(let k=0;k<8;k++){const z=base(n,v,k);place(z,data,k);const s=pen(z);if(k===0||s<best){best=s;m=z}}return{m,n}}
+function svg(t){const{m,n}=matrix(t),q=4,z=n+q*2;let d="";for(let r=0;r<n;r++)for(let c=0;c<n;c++)if(m[r][c])d+=`M${c+q} ${r+q}h1v1h-1z`;
+return`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${z} ${z}" shape-rendering="crispEdges"><rect width="100%" height="100%" fill="#fff"/><path d="${d}" fill="#123525"/></svg>`}
+return{svg}})();
+</script>
+</head>
+<body>
+<div class="shell">
+  <header class="bar">
+    <div class="bar-l"><div class="mark"><span data-ic="mark"></span></div><div><div class="ttl">消息中心</div><div class="sub">Kimi 互动</div></div></div>
+    <div class="bar-r">
+      <div class="acct-wrap"><button class="acct-btn" id="btnAcct" title="切换已保存的账户"><span data-ic="user"></span><span class="n" id="acctName">账户</span><span data-ic="chev"></span></button>
+        <div class="acct-menu hidden" id="acctMenu"><h4>已保存账户 · 点一下即换 rt</h4><div id="acctList"></div><button class="acct-add" id="btnAddAcct"><span data-ic="plus"></span>添加新账户（输入 rt）</button></div>
+      </div>
+      <span class="pill" id="status">未登录</span><button class="icon" id="btnRefresh" title="刷新"><span data-ic="refresh"></span></button><button class="btn-t hidden" id="btnLogout">退出账户</button>
+    </div>
+  </header>
+
+  <section class="card" id="configSec">
+    <div class="cfg-head"><span class="step">1</span><div><b>扫码登录</b><small>用 Kimi App 扫一扫，手机点确认</small></div></div>
+    <div class="qr" id="qrBox" hidden>
+      <div class="qr-canvas" id="qrWrap"></div>
+      <div class="qr-side">
+        <label>扫码凭证 code</label><input id="qrCode" readonly placeholder="生成后显示">
+        <label>设备标识 device_id</label><input id="qrWid" readonly placeholder="自动生成">
+        <p class="hint" id="qrTip">用 Kimi App 扫描左侧二维码，扫出后在手机点确认即可登录。</p>
+        <p class="count" id="qrCountdown"></p>
+      </div>
+    </div>
+    <div class="row"><button class="btn-f" id="btnGenQr">生成登录二维码</button><button class="btn-x" id="btnCancelQr" hidden>取消</button></div>
+    <p class="st" id="qrSt"></p>
+
+    <div class="divider"></div>
+    <div class="cfg-head"><span class="step">2</span><div><b>或粘贴 refresh_token</b><small>kimi.com 登录页 localStorage 里取</small></div></div>
+    <textarea id="rfInput" rows="2" placeholder="粘贴 refresh_token…"></textarea>
+    <div class="row"><input id="didInput" placeholder="device_id（可选）"><input id="sidInput" placeholder="session_id（可选）"></div>
+    <button class="btn-f" id="btnLogin">保存并登录</button>
+    <p class="st" id="loginSt"></p>
+
+    <div class="divider"></div>
+    <div class="cfg-head"><span class="step">3</span><div><b>内嵌 kimi.com 登录</b><small>iframe 直接嵌在本页，不跳走</small></div></div>
+    <p class="howto"><b>关于「自动读 rt」：</b>iframe 里的 kimi.com 与面板不同源，浏览器不允许父页面直接读它的 localStorage；所以由 <b>内嵌页自己把 refresh_token 回传</b>。在里面登录完成后，把 DevTools 的 Console 上下文切到这个 iframe，粘贴运行一次提取脚本（或点书签栏书签），面板会自动收到并保存为账户。若站点拒绝被嵌套导致空白，用「新标签打开兜底」登录后跑脚本，token 一样回传本面板。</p>
+    <div class="embed-bar" style="margin:0 0 8px"><button class="btn-t mini" id="btnToggleEmbed"><span data-ic="frame"></span>隐藏内嵌页</button><span class="embed-note" id="embedNote">内嵌页常驻在本页，不跳转</span></div>
+    <div id="frameBox"><iframe id="kimiFrame" class="embed" src="https://www.kimi.com" title="kimi.com 登录页" referrerpolicy="no-referrer" loading="lazy"></iframe></div>
+    <div class="embed-url"><input id="embedUrl" value="https://www.kimi.com" placeholder="内嵌页地址（可填自己的同源反代）"><button class="btn-t mini" id="btnLoadEmbed">加载</button></div>
+    <div class="embed-bar">
+      <button class="btn-f mini" id="btnOpen"><span data-ic="external"></span>新标签打开兜底</button>
+      <button class="btn-t mini" id="btnTryFrame">尝试从内嵌帧读 rt</button>
+      <button class="btn-t mini" id="btnReloadEmbed"><span data-ic="refresh"></span>重载内嵌页</button>
+      <button class="btn-t mini" id="btnCopy">复制提取脚本</button>
+      <button class="btn-t mini" id="btnPaste">从剪贴板填入</button>
+    </div>
+    <a class="bm" id="bmLink" href="#" title="拖到书签栏，在 kimi.com 页面点它"><span data-ic="leaf"></span>拖我到书签栏 · 一键带回 rt</a>
+    <textarea id="scriptBox" rows="3" readonly hidden></textarea>
+    <p class="embed-warn" id="frameWarn"><b>显示 <code>ERR_BLOCKED_BY_CSP</code> / 空白的原因：</b>kimi.com 在响应头里下发了 <code>Content-Security-Policy: frame-ancestors …</code>（或 <code>X-Frame-Options</code>），只允许同源页面嵌它；本面板是 localhost / 本地文件源，浏览器据此拦截。这是<b>被嵌站点的服务端策略</b>，改本页 HTML、meta CSP 或 iframe 属性都绕不过。<br>能做的两件事：1) 点「新标签打开兜底」登录后跑一次脚本 / 点书签，rt 仍会自动回传本面板；2) 自己搭同源反向代理并剥掉 CSP 响应头，再把地址填进上方输入框（登录态与接口域名可能失效，不保证可用）。</p>
+    <p class="st" id="bridgeSt"></p>
+  </section>
+
+  <nav class="tabs" id="tabsSec"><span class="tab-ind" id="tabInd"></span><button class="tab on" data-tab="moment" aria-selected="true">社区互动</button><button class="tab" data-tab="inapp" aria-selected="false">站内推送</button></nav>
+  <div class="viewport"><div class="track" id="tabTrack">
+    <section class="pane"><div class="list" id="momentBody" aria-hidden="false"><div class="empty">登录成功后点右上角刷新<br>加载社区与站内消息</div></div></section>
+    <section class="pane"><div class="list" id="inappBody" aria-hidden="true"></div></section>
+  </div></div>
+</div>
+
+<div class="mask hidden" id="logoutMask">
+  <div class="modal" role="dialog" aria-modal="true"><h3>退出当前账户？</h3><p>返回登录区；已保存的账户和各自的「上次读到哪」记录都保留，点顶部账户名即可一键切回。想彻底清除请在账户列表里点删除按钮，或用下面的「清空全部」。</p>
+  <div class="acts"><button class="btn-x" id="logoutCancel">取消</button><button class="btn-t" id="logoutAll" style="font-size:11px;padding:9px 12px">清空全部</button><button class="btn-danger" id="logoutConfirm">退出当前</button></div></div>
+</div>
+
+<div class="mask hidden" id="acctMask">
+  <div class="modal wide" role="dialog" aria-modal="true">
+    <h3 id="acctTitle">新建账户</h3>
+    <p id="acctDesc">三种方式都能给这个账户拿到 refresh_token；拿到后会自动填进「粘贴 rt」，点底部保存即可。各账户的凭证与「上次读到哪」互不影响。</p>
+    <label>账户昵称（可留空，自动命名）</label><input id="acctNewName" placeholder="例如：小号">
+    <div class="m-tabs" id="mTabs"><span class="m-ind" id="mInd"></span>
+      <button class="m-tab" data-m="qr" aria-selected="false">1 扫码登录</button>
+      <button class="m-tab on" data-m="paste" aria-selected="true">2 粘贴 rt</button>
+      <button class="m-tab" data-m="bridge" aria-selected="false">3 内嵌带回</button>
+    </div>
+
+    <div class="m-pane" data-p="qr" hidden>
+      <div class="m-qr">
+        <div class="m-qr-canvas" id="mQrWrap"></div>
+        <div class="m-qr-side">
+          <label>扫码凭证 code</label><input id="mQrCode" readonly placeholder="生成后显示">
+          <label>device_id</label><input id="mQrWid" readonly placeholder="自动生成">
+          <p class="count" id="mCountdown"></p>
+        </div>
+      </div>
+      <div class="m-row"><button class="btn-f mini" id="mGenQr">生成登录二维码</button><button class="btn-x mini" id="mCancelQr" hidden>取消</button></div>
+      <p class="st" id="mQrSt"></p>
+      <p class="m-hint" id="mQrTip">用 Kimi App 扫码并在手机点确认，拿到的 refresh_token 会自动填入「粘贴 rt」，不会立刻切换账户。</p>
+    </div>
+
+    <div class="m-pane" data-p="paste">
+      <label>refresh_token</label><textarea id="acctNewRt" rows="2" placeholder="粘贴 refresh_token…"></textarea>
+      <div class="row" style="margin-bottom:0"><input id="mDid" placeholder="device_id（可选）"><input id="mSid" placeholder="session_id（可选）"></div>
+      <p class="m-hint">编辑账户时这里预填的是该账户已保存的 rt；不改它、只改昵称则不会重新登录。</p>
+    </div>
+
+    <div class="m-pane" data-p="bridge" hidden>
+      <p class="m-note">在下方内嵌页里登录 kimi.com，再跑一次提取脚本或点书签，rt 会通过 <code>postMessage</code> 回传并自动填入「粘贴 rt」。若被 <code>ERR_BLOCKED_BY_CSP</code> 拦住（站点不允许被嵌套），用「新标签打开」兜底，效果一样。</p>
+      <div class="m-row" style="margin-top:0">
+        <button class="btn-t mini" id="mToggleEmbed"><span data-ic="frame"></span>隐藏内嵌页</button>
+        <button class="btn-t mini" id="mReloadEmbed"><span data-ic="refresh"></span>重载内嵌页</button>
+      </div>
+      <div id="mFrameBox"><iframe id="mKimiFrame" class="m-iframe" src="https://www.kimi.com" title="kimi.com 登录页" referrerpolicy="no-referrer" loading="lazy"></iframe></div>
+      <div class="m-embed-row"><input id="mEmbedUrl" value="https://www.kimi.com" placeholder="内嵌页地址（同源反代可填这里）"><button class="btn-t mini" id="mLoadEmbed">加载</button></div>
+      <div class="m-row">
+        <button class="btn-t mini" id="mOpen"><span data-ic="external"></span>新标签打开兜底</button>
+        <button class="btn-t mini" id="mCopy">复制提取脚本</button>
+        <button class="btn-t mini" id="mPaste">从剪贴板填入 rt</button>
+      </div>
+      <a class="bm" id="mBmLink" href="#" title="拖到书签栏，在 kimi.com 页面点它"><span data-ic="leaf"></span>书签：一键带回 rt</a>
+    </div>
+
+    <p class="m-status" id="mStatus"></p>
+    <div class="acts"><button class="btn-x" id="acctCancel">取消</button><button class="btn-f" id="acctOk">保存并切换</button></div>
+  </div>
+</div>
+
+<div class="mask hidden" id="delMask">
+  <div class="modal" role="dialog" aria-modal="true"><h3>删除账户？</h3><p id="delDesc">将移除该账户及本机保存的 rt。</p>
+    <div class="acts"><button class="btn-x" id="delCancel">取消</button><button class="btn-danger" id="delOk">确认删除</button></div>
+  </div>
+</div>
+
+<script>
+(()=>{"use strict";
+/* ---------- 全部图形符号用内联 SVG，不用 emoji ---------- */
+const P=d=>`<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${d}</svg>`;
+const ICONS={
+ mark:P('<path d="M12 2v20M2 12h20M5 5l14 14M19 5L5 19"/>'),
+ refresh:P('<path d="M20 11a8 8 0 1 0-2.3 5.7"/><path d="M20 4v7h-7"/>'),
+ user:P('<circle cx="12" cy="8" r="3.6"/><path d="M4.5 20a7.5 7.5 0 0 1 15 0"/>'),
+ chev:P('<path d="M6 9l6 6 6-6"/>'),
+ external:P('<path d="M14 4h6v6"/><path d="M20 4l-9 9"/><path d="M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"/>'),
+ leaf:P('<path d="M12 21c0-6 3-10 9-11 0 7-4 11-9 11z"/><path d="M12 21c0-5-2-8-7-9 0 6 3 9 7 9z"/><path d="M12 21v-6"/>'),
+ edit:P('<path d="M4 20h4l10-10-4-4L4 16v4z"/><path d="M13.5 6.5l4 4"/>'),
+ close:P('<path d="M6 6l12 12M18 6L6 18"/>'),
+ plus:P('<path d="M12 5v14M5 12h14"/>'),
+ reply:P('<path d="M9 7L4 12l5 5"/><path d="M4 12h10a6 6 0 0 1 6 6v1"/>'),
+ clock:P('<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>'),
+ alert:P('<path d="M12 3l9 16H3L12 3z"/><path d="M12 9v5M12 17.2v.1"/>'),
+ check:P('<path d="M4 12.5l5 5L20 6.5"/>'),
+ circle:P('<circle cx="12" cy="12" r="8"/>'),
+ up:P('<path d="M12 19V5M6 11l6-6 6 6"/>'),
+ frame:P('<rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 9h18"/>')
+};
+const IC=k=>ICONS[k]||"";
+document.querySelectorAll("[data-ic]").forEach(e=>{e.innerHTML=IC(e.dataset.ic)});
+const autoIco=t=>t==="ok"?"check":(t==="err"||t==="fail")?"alert":t==="wait"?"clock":"";
+/* 底层/英文报错一律换成中文短句；凭证、格式类统一为「请重新登录」 */
+function friendly(m){const s=String(m||"").trim();if(!s)return "操作失败，请稍后重试";
+if(/[\u4e00-\u9fa5]/.test(s)&&!/(unmarshal|proto:|duplicate|HTTP\s?\d|Failed to fetch|NetworkError|TypeError|json:|exception|error:)/i.test(s))return s.length>160?s.slice(0,160)+"…":s;
+if(/unmarshal|duplicate field|proto:|json:|invalid character|decode|malformed|parse error|invalid request|serializ/i.test(s))return "请重新登录";
+if(/401|403|unauthenticated|permission denied|invalid.*token|token.*(invalid|expired)|expired|refresh.*(fail|invalid|expire)|credential|auth/i.test(s))return "请重新登录";
+if(/Failed to fetch|NetworkError|Load failed|TypeError|CORS|ERR_|fetch failed|network/i.test(s))return "网络异常，请检查连接后重试";
+if(/HTTP 5\d\d|502|503|504|service unavailable/i.test(s))return "服务暂时不可用，请稍后重试";
+if(/HTTP 4\d\d|429|too many/i.test(s))return "请求被拒绝，请重新登录或稍后重试";
+if(/^[\x00-\x7F\s]+$/.test(s))return "操作失败，请稍后重试";
+return s.length>160?s.slice(0,160)+"…":s}
+function line(el,text,tone,ico,base){const t=(tone==="err"||tone==="fail")?friendly(text):text;el.className=(base||"st")+(tone?" "+tone:"");el.innerHTML=(ico?IC(ico):"")+"<span>"+esc(t)+"</span>"}
+const A="https://auth.kimi.com/api",B="https://www.kimi.com/apiv2",PAGE=50,KEY="kimi_msg_panel",ACC="kimi_accounts",RKEY="kimi_msg_last_read",TTL=5*60*1000;
+const U={refresh:A+"/account.gateway.v1.AuthService/RefreshToken",createQr:A+"/account.gateway.v1.AuthService/CreateLoginQRCode",qrStatus:A+"/account.gateway.v1.AuthService/GetLoginQRCodeStatus",logout:A+"/account.gateway.v1.AuthService/Logout",
+notif:B+"/moment.v1.NotificationService/ListNotification",profile:B+"/moment.v1.UserService/GetUserProfile",inapp:B+"/kimi.gateway.notification.v1.NotificationService/ListUserNotifications",cmt:B+"/moment.v1.CommentService/CreateComment"};
+const TM={NOTIFICATION_TYPE_FAVORITE:"收藏",NOTIFICATION_TYPE_FOLLOW:"关注",NOTIFICATION_TYPE_REPLY_COMMENT:"回复评论",NOTIFICATION_TYPE_UP_COMMENT:"赞了评论",NOTIFICATION_TYPE_UP_MOMENT:"赞了动态",NOTIFICATION_TYPE_COMMENT_MOMENT:"评论动态",NOTIFICATION_TYPE_UNSPECIFIED:"通知",0:"通知",1:"收藏",2:"关注",3:"回复评论",4:"赞了评论",5:"赞了动态",6:"评论动态"};
+const IM={NOTIFICATION_TYPE_MY_KIMI:"我的 Kimi",NOTIFICATION_TYPE_TASK:"任务",NOTIFICATION_TYPE_SKILL:"技能",NOTIFICATION_TYPE_ACTIVITY:"活动",NOTIFICATION_TYPE_OPERATIONAL:"运营",NOTIFICATION_TYPE_CHAT_STATUS_CHANGED:"聊天状态",NOTIFICATION_TYPE_UNSPECIFIED:"通知"};
+const REPLYABLE=new Set(["回复评论","评论动态"]),ALT=new Set(["任务","活动","技能","聊天状态"]);
+let at="",aexp=0,rf="",did="",sid="",activeId="",rtimer=null,rpromise=null,dgen=0,bridgeTarget="panel";
+const $=i=>document.getElementById(i);
+/* ---------- 多账户：每个账户存自己的 rt，切换就是换 rt ---------- */
+const accList=()=>{try{return JSON.parse(localStorage.getItem(ACC))||[]}catch{return []}};
+const accSave=l=>{try{localStorage.setItem(ACC,JSON.stringify(l))}catch{}};
+const accGet=()=>accList().find(a=>a.id===activeId)||null;
+const mask=t=>{const s=String(t||"");return s.length>12?s.slice(0,4)+"…"+s.slice(-6):(s?"••••":"空")};
+function sync(){const l=accList(),a=l.find(x=>x.id===activeId);if(!a)return;a.refreshToken=rf;a.accessToken=at;a.accessExp=aexp;a.deviceId=did;a.sessionId=sid;accSave(l)}
+function putAccount(rt,name){rf=rt;const l=accList();let a=l.find(x=>x.refreshToken===rt);if(!a){a={id:"a"+Date.now().toString(36)+Math.random().toString(36).slice(2,6),name:name||("账户 "+(l.length+1)),addedAt:Date.now()};l.push(a)}if(name)a.name=name;a.refreshToken=rt;activeId=a.id;accSave(l);sync();return a}
+function switchAccount(id){const a=accList().find(x=>x.id===id);if(!a)return;
+if(id===activeId&&rf){$("status").textContent="当前已是「"+a.name+"」";return}
+sync();activeId=id;rf=a.refreshToken||"";at=a.accessToken||"";aexp=Number(a.accessExp)||0;did=a.deviceId||"";sid=a.sessionId||"";rpromise=null;
+$("acctName").textContent=a.name;$("status").textContent="已切到「"+a.name+"」";save();onLogin("已切到「"+a.name+"」")}
+function delAccount(id){const was=id===activeId;try{localStorage.removeItem(RKEY+"_"+id)}catch{}
+accSave(accList().filter(x=>x.id!==id));if(was){activeId="";doLogout()}else renderAccounts()}
+const load=()=>accGet()||(()=>{try{return JSON.parse(localStorage.getItem(KEY))||null}catch{return null}})();
+const save=()=>{sync();try{localStorage.setItem(KEY,JSON.stringify({refreshToken:rf,accessToken:at,accessExp:aexp,deviceId:did,sessionId:sid}))}catch{}};
+const clear=()=>{try{localStorage.removeItem(KEY)}catch{}};
+const readKey=()=>RKEY+"_"+(activeId||"default");
+const readLoad=()=>{try{return JSON.parse(localStorage.getItem(readKey()))||null}catch{return null}};
+const readSave=o=>{try{localStorage.setItem(readKey(),JSON.stringify(o))}catch{}};
+const readClear=()=>{try{localStorage.removeItem(readKey())}catch{}};
+const wm=t=>{const o=readLoad();return Number(o&&o[t])||0};
+const wmSave=(t,v)=>{const o=readLoad()||{};o[t]=v;readSave(o)};
+function jexp(t){try{let b=t.split(".")[1].replace(/-/g,"+").replace(/_/g,"/");b+="=".repeat((4-b.length%4)%4);return Number(JSON.parse(atob(b)).exp)||0}catch{return 0}}
+function keep(t){at=t;aexp=jexp(t);save()}
+/* ---------- 请求 ---------- */
+function head(){return{"Content-Type":"application/json",Accept:"application/json","X-Language":"zh-CN","x-msh-platform":"web","x-msh-version":"3.1.0","R-Timezone":"Asia/Shanghai",...(did?{"x-msh-device-id":did}:{}),...(sid?{"x-msh-session-id":sid}:{})}}
+async function req(url,body,useToken){const h=head();if(/RefreshToken|Logout$/.test(url))h["connect-protocol-version"]="1";if(useToken)h.Authorization="Bearer "+await ensure();
+const r=await fetch(url,{method:"POST",headers:h,body:JSON.stringify(body||{})});const t=await r.text();let j=null;try{j=t?JSON.parse(t):null}catch{}
+if(!r.ok){const raw=j?.details?.[0]?.debug?.localizedMessage?.message||j?.message||j?.code||`HTTP ${r.status} ${t.slice(0,120)}`;const e=new Error(friendly(raw));e.body=j??t.slice(0,300);throw e}return j??{raw:t}}
+function pick(d,ks){if(!d||typeof d!=="object")return"";for(const k of ks)if(typeof d[k]==="string"&&d[k])return d[k];for(const k of Object.keys(d)){const v=d[k];if(v&&typeof v==="object")for(const kk of ks)if(typeof v[kk]==="string"&&v[kk])return v[kk]}return""}
+function refresh(){if(rpromise)return rpromise;rpromise=(async()=>{if(!rf)throw Error("没有 refresh_token");const d=await req(U.refresh,{refresh_token:rf},false);const nw=pick(d,["refreshToken","refresh_token"]);if(nw)rf=nw;const t=pick(d,["accessToken","access_token","token"]);if(!t)throw Error("刷新成功但未取到 accessToken");keep(t);return t})().finally(()=>rpromise=null);return rpromise}
+function ensure(){return at&&aexp&&Date.now()/1000<aexp-120?Promise.resolve(at):refresh()}
+function api(url,body){return req(url,body,true)}
+function autoRefresh(){clearInterval(rtimer);rtimer=setInterval(()=>refresh().catch(e=>console.warn("自动刷新失败：",friendly(e.message))),14*60*1000)}
+/* ---------- 工具 ---------- */
+const esc=s=>{const d=document.createElement("div");d.textContent=s??"";return d.innerHTML};
+const esa=s=>esc(s).replace(/"/g,"&quot;");
+const cut=(s,n)=>{const t=typeof s==="object"?JSON.stringify(s):String(s??"");return t.length>n?t.slice(0,n)+"…":t};
+function stamp(v){if(v==null||v===""||v==="—")return 0;if(typeof v==="object"){if(v.seconds!=null)return Number(v.seconds)*1000;if(v.$date)return stamp(v.$date);return 0}if(typeof v==="number")return v<1e12?v*1000:v;let s=String(v).trim();if(/^\d+$/.test(s)){const n=Number(s);return n<1e12?n*1000:n}s=s.replace(" ","T");if(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(:\d{2})?$/.test(s))s+="+08:00";const t=Date.parse(s);return isNaN(t)?0:t}
+function rel(v){const t=stamp(v);if(!t)return"";const d=Date.now()-t;if(d<6e4)return"刚刚";const mi=Math.floor(d/6e4),h=Math.floor(d/36e5);if(mi<60)return mi+" 分钟前";if(h<24)return h+" 小时前";if(h<48)return"昨天";if(h<168)return Math.floor(h/24)+" 天前";if(h<720)return Math.floor(h/24/7)+" 周前";const z=new Date(t),now=new Date();return z.getFullYear()===now.getFullYear()?`${z.getMonth()+1}月${z.getDate()}日`:`${z.getFullYear()}/${z.getMonth()+1}/${z.getDate()}`}
+function abs(v){const t=stamp(v);if(!t)return"时间未知";const z=new Date(t);const p=n=>String(n).padStart(2,"0");return`${z.getMonth()+1}月${z.getDate()}日 ${p(z.getHours())}:${p(z.getMinutes())}`}
+function av(u){if(!u||typeof u!=="object")return"";const p=x=>{if(!x)return"";if(typeof x==="string")return x;const v=x.url||x.thumbnailUrl||x.originUrl||"";return v.startsWith("//")?"https:"+v:v};let s="";for(const k of["avatarUrl","avatar","avatarImage","image"])if(!s&&u[k])s=p(u[k]);if(!s&&u.userBase?.avatarImage)s=p(u.userBase.avatarImage);if(!s&&u.userInfo?.userBase?.avatarImage)s=p(u.userInfo.userBase.avatarImage);return s}
+const nm=u=>u?(typeof u==="string"?u:u.name||u.nickname||u.userId||""):"";
+const uid=u=>u?(typeof u==="string"?u:u.userId||u.id||""):"";
+function avatarHtml(u){const url=av(u),n=(nm(u)||"K").slice(0,1).toUpperCase();return`<div class="av${u?"":" sys"}">${url?`<img src="${esa(url)}" referrerpolicy="no-referrer" alt="">`:""}<span>${esc(n)}</span></div>`}
+/* ---------- 数据（不再取任何未读状态） ---------- */
+const momentTitles=new Map();
+function indexMoments(d){for(const m of d?.moments||[]){const id=String(m.id??m.momentId??"");if(!id)continue;const t=String(m.content?.text||m.text||m.title||m.content?.title||"").trim();if(t)momentTitles.set(id,t)}}
+function momentTitle(id){return id?momentTitles.get(String(id))||"":""}
+async function loadMoment(){const d={notifications:[],moments:[],comments:[],users:[],errors:[]};
+try{const r=await api(U.notif,{limit:PAGE});d.notifications=r.notifications||[];d.moments=r.moments||[];d.comments=r.comments||[];d.users=r.users||[]}catch(e){d.errors.push("社区通知 → "+friendly(e.message))}
+const miss=new Set();for(const n of d.notifications)for(const f of n.fromUsers||[]){const id=typeof f==="object"?uid(f):f;if(id&&!d.users?.some(u=>uid(u)===id))miss.add(id)}
+if(miss.size&&miss.size<=15){const ex=await Promise.all([...miss].map(async id=>{try{const r=await api(U.profile,{userId:id});return r.userBase||r}catch{return null}}));d.users=[...(d.users||[]),...ex.filter(Boolean)]}
+return d}
+async function loadInapp(){const d={items:[],errors:[]};try{const r=await api(U.inapp,{pageSize:PAGE});d.items=r.userNotifications||[]}catch(e){d.errors.push("站内 → "+friendly(e.message))}return d}
+function describe(n,users,comments,moments){const tl=TM[n.notificationType??n.type]??String(n.notificationType??n.type??"通知");let a={name:"",uid:""};const f=Array.isArray(n.fromUsers)?n.fromUsers[0]:null;
+if(f){if(typeof f==="object"&&f){a={name:nm(f),uid:uid(f),u:f};const m=users?.find(u=>uid(u)===uid(f));if(m){a.name=nm(m)||a.name;a.u=m}}else{const m=users?.find(u=>uid(u)===f);a=m?{name:nm(m),uid:uid(m),u:m}:{name:String(f),uid:String(f)}}}
+if(!a.name)a.name="有人";
+let mt="",ct="";if(n.momentId&&moments?.length){const m=moments.find(x=>x.id===n.momentId||x.momentId===n.momentId);if(m)mt=m.content?.text||m.text||m.title||""}
+if(n.commentId&&comments?.length){const c=comments.find(x=>x.id===n.commentId||x.commentId===n.commentId);if(c)ct=c.content?.text||c.text||""}
+const sn=(s,k)=>s.length>k?s.slice(0,k)+"…":s;let s;
+switch(tl){case"收藏":s="收藏了你的动态";break;case"关注":s="关注了你";break;case"回复评论":s="回复了你的评论";break;case"赞了评论":s="赞了你的评论";break;case"赞了动态":s="赞了你的动态";break;case"评论动态":s="评论了你的动态";break;default:s=tl}
+if(mt&&["赞了动态","收藏","评论动态"].includes(tl))s+=`\n动态：「${sn(mt,60)}」`;if(ct&&["评论动态","回复评论","赞了评论"].includes(tl))s+=`\n评论：「${sn(ct,80)}」`;
+return{desc:s,actor:a,tl,mt}}
+/* ---------- 回复（短锚写法 v8） ---------- */
+function buildReply(o){const AN="查看",w=document.createElement("div");w.className="reply";
+w.innerHTML=`<button class="reply-trig">${IC("reply")}回复</button><div class="panel" hidden><textarea class="ta" rows="2" placeholder="写回复内容…（可插入链接）"></textarea><button class="link-add">${IC("plus")}插入链接</button><div class="link-list"></div><div class="editor" hidden><div class="ed-head"><span class="ed-title">插入链接</span><button class="ed-x" title="收起">${IC("close")}</button></div><div class="ed-seg"><span class="ed-ind"></span><button class="ed-opt on" data-v="LINK_TYPE_WEB">网页链接</button><button class="ed-opt" data-v="LINK_TYPE_MOMENT">作品跳转</button></div><select class="e-type hidden"><option value="LINK_TYPE_WEB" selected>网页链接</option><option value="LINK_TYPE_MOMENT">作品跳转</option></select><div class="ed-fields" data-f="web"><label>跳转网址</label><input class="e-url" placeholder="https://example.com"><label>链接文字</label><input class="e-txt" placeholder="显示在消息里"></div><div class="ed-fields" data-f="moment" hidden><label>作品 momentId</label><input class="e-mid" placeholder="留空即当前动态"></div><div class="acts"><button class="btn-x e-cancel">取消</button><button class="btn-f e-ok">插入</button></div></div><div class="acts"><button class="btn-x s-cancel">取消</button><button class="btn-f s-send">发送</button></div><div class="status" hidden></div></div>`;
+const q=s=>w.querySelector(s),trig=q(".reply-trig"),pn=q(".panel"),ta=q(".ta"),ll=q(".link-list"),ed=q(".editor"),iu=q(".e-url"),it=q(".e-txt"),im=q(".e-mid"),ity=q(".e-type"),seg=q(".ed-seg"),edind=q(".ed-ind"),fw=q('[data-f="web"]'),fm=q('[data-f="moment"]'),st=q(".status"),sd=q(".s-send");
+let links=[],cursor=0,prev="";
+const isMo=()=>ity.value==="LINK_TYPE_MOMENT";
+function resolvedId(){return im.value.trim().replace(/\s+/g,"")||String(o.momentId||"")}
+function autoTxt(id){if(!id)return"";if(o.momentId&&String(o.momentId)===String(id)&&o.momentTitle)return String(o.momentTitle);return momentTitle(id)}
+const short=(s,n)=>s.length>n?s.slice(0,n)+"…":s;
+function hints(){const m=isMo();fw.hidden=m;fm.hidden=!m;edind.style.transform=`translateX(${m?100:0}%)`}
+function reanchor(oldT,newT,quiet){if(oldT===newT)return;let s=0;while(s<oldT.length&&s<newT.length&&oldT[s]===newT[s])s++;let oe=oldT.length,ne=newT.length;while(oe>s&&ne>s&&oldT[oe-1]===newT[ne-1]){oe--;ne--}const dl=ne-oe,out=[],drop=[];
+for(const l of links){const e=l.offset+l.length;if(e<=s){out.push(l);continue}if(s>=l.offset&&oe<=e){const n=l.length+dl;if(n>0){l.length=n;l.text=newT.slice(l.offset,l.offset+n);out.push(l)}else drop.push(l.text);continue}if(l.offset>=oe){l.offset+=dl;out.push(l);continue}drop.push(l.text)}
+links=out.sort((a,b)=>a.offset-b.offset);if(drop.length&&!quiet)show(false,`链接文字改动跨过了边界，已移除 ${drop.length} 条：${drop.join("、")}`)}
+function show(ok,txt){st.hidden=false;line(st,txt,ok?"ok":"fail",ok?"check":"alert","status")}
+function render(){ll.innerHTML="";links.forEach((l,i)=>{const it=document.createElement("div");it.className="link-item";it.innerHTML=`<b>${l.idTarget?"[作品]":"[网页]"}</b><b>${esc(l.customText||l.text)}</b><span class="u">${esc(l.url||l.idTarget||"")}</span><span class="del" data-i="${i}">${IC("close")}</span>`;it.querySelector(".del").onclick=()=>{const r=links.splice(i,1)[0];if(!r)return;const c=r.customText?.length||0,start=c&&r.offset-c>=0&&ta.value.slice(r.offset-c,r.offset)===r.customText?r.offset-c:r.offset,end=r.offset+r.length,n=end-start;ta.value=ta.value.slice(0,start)+ta.value.slice(end);links.forEach(l=>{if(l.offset>=end)l.offset-=n});links.sort((a,b)=>a.offset-b.offset);prev=ta.value;cursor=Math.max(0,Math.min(cursor,start));render()};ll.appendChild(it)})}
+trig.onclick=()=>{pn.hidden=false;cursor=ta.selectionStart??ta.value.length;prev=ta.value;hints();ta.focus()};
+q(".s-cancel").onclick=()=>{pn.hidden=true;links=[];ll.innerHTML="";st.hidden=true;ta.value="";prev=""};
+q(".link-add").onclick=()=>{cursor=ta.selectionStart??cursor??ta.value.length;ed.hidden=false;hints();(isMo()?im:it).focus()};
+q(".e-cancel").onclick=()=>{ed.hidden=true;iu.value="";it.value="";im.value=""};
+q(".ed-x").onclick=()=>{ed.hidden=true};
+seg.querySelectorAll(".ed-opt").forEach(b=>b.onclick=()=>{seg.querySelectorAll(".ed-opt").forEach(x=>x.className="ed-opt");b.className="ed-opt on";ity.value=b.dataset.v;hints();(isMo()?im:it).focus()});
+it.addEventListener("input",hints);im.addEventListener("input",hints);
+ta.addEventListener("input",()=>{reanchor(prev,ta.value,false);prev=ta.value;cursor=ta.selectionStart??ta.value.length;render()});ta.addEventListener("blur",()=>cursor=ta.selectionStart??cursor);
+q(".e-ok").onclick=()=>{const m=isMo();let raw,custom,t;
+if(m){raw=resolvedId();if(!raw){show(false,"请填作品 momentId，或留空以使用当前动态");return}
+const http=/^https?:\/\//i.test(raw);let id=raw;if(http){const s=raw.split(/[/?#]/).filter(Boolean).pop()||"";try{id=decodeURIComponent(s)}catch{id=s}}
+t={idTarget:id,url:http?raw:"https://www.kimi.com/moment/"+encodeURIComponent(id)};
+custom=autoTxt(id)||("作品 "+short(id,20))}
+else{raw=iu.value.trim().replace(/\s+/g,"");if(!raw){show(false,"请先填 1. 跳转网址");return}custom=it.value.trim()||raw;t={idTarget:"",url:raw}}
+const pos=Math.min(cursor,ta.value.length),ins=custom+AN;
+links.forEach(l=>{if(l.offset>=pos)l.offset+=ins.length});ta.value=ta.value.slice(0,pos)+ins+ta.value.slice(pos);
+links.push({url:t.url,idTarget:t.idTarget,text:AN,customText:custom,offset:pos+custom.length,length:AN.length,type:ity.value});links.sort((a,b)=>a.offset-b.offset);prev=ta.value;cursor=pos+ins.length;render();ed.hidden=true;iu.value="";it.value="";im.value="";hints();ta.focus();ta.setSelectionRange(cursor,cursor)};
+sd.onclick=async()=>{const text=ta.value;if(!text.trim()&&!links.length)return;reanchor(prev,text,true);prev=text;for(const l of links){const a=text.slice(l.offset,l.offset+l.length);if(a)l.text=a}
+sd.disabled=true;sd.textContent="发送中…";st.hidden=false;st.className="status";st.textContent="发送中…";
+try{const body={momentId:o.momentId,content:{text}};if(o.targetCommentId)body.targetCommentId=o.targetCommentId;
+if(links.length)body.links=links.map(l=>({type:l.type,text:l.text,displayText:l.customText||l.text,offset:l.offset,length:l.length,...(l.idTarget?{id:l.idTarget}:{}),...(l.url?{url:l.url}:{})}));
+const r=await api(U.cmt,body),back=r?.comment?.links||r?.links||[],srv=back.length?(back[0].displayText||back[0].text||"（空）"):"（响应未带 links）",mine=links.length?(links[0].customText||links[0].text):"—";
+show(true,`已发送（ID: ${(r?.comment||r||{}).id||"未知"}）\n正文里的自定义文字：${mine}\n服务端 displayText（只作用于末尾短锚）：${srv}\n→ 「${mine}」在锚点之外，App 里照常显示`);ta.value="";links=[];ll.innerHTML="";prev=""}
+catch(e){show(false,friendly(e.message))}sd.disabled=false;sd.textContent="发送"};
+return w}
+/* ---------- 卡片 ---------- */
+function card(o){const el=document.createElement("article");el.className="msg";
+const meta=(o.meta||[]).filter(Boolean).join(" · ");el.innerHTML=`${avatarHtml(o.user)}<div class="body"><div class="head"><span class="name">${esc(o.name||"Kimi")}</span><span class="chip${ALT.has(o.tag)?" alt":""}">${esc(o.tag||"通知")}</span>${o.time?`<span class="time" title="${esa(o.rawTime||"")}">${esc(o.time)}</span>`:""}</div><div class="desc">${esc(o.desc).replace(/\n/g,"<br>")}</div>${o.content?`<div class="content">${esc(o.content)}</div>`:""}${meta?`<div class="meta">${esc(meta)}</div>`:""}</div>`;
+el.querySelectorAll(".av img").forEach(img=>img.onerror=()=>img.remove());
+if(o.replyable&&o.momentId)el.querySelector(".body").appendChild(buildReply({momentId:o.momentId,momentTitle:o.momentTitle,targetCommentId:o.targetCommentId}));return el}
+function sum(txt,hot,tab){const d=document.createElement("div");d.className="sum"+(hot?"":" calm");d.innerHTML=IC("circle")+"<span>"+esc(txt)+"</span>";const b=document.createElement("button");b.className="rst";b.textContent="重置记录";b.onclick=()=>{const o=readLoad()||{};delete o[tab];readSave(o);b.textContent="已清除";setTimeout(()=>b.textContent="重置记录",1600)};d.appendChild(b);return d}
+function sinceEl(prev,fresh){const e=document.createElement("div");e.className="since";e.innerHTML=`<span class="ln"></span><span>${IC("up")} 上次读到 <b>${esc(abs(prev))}</b> · 以上 <b>${fresh}</b> 条是之后的新消息</span><span class="ln"></span>`;return e}
+function errbox(t){const d=document.createElement("div");d.className="errbox";d.textContent=String(t).split("\n").map(friendly).join("\n");return d}
+/* 统一水位：按「上次刷新时见到的最新时间」推进，列表里插一条分割线 */
+function water(tab,rows){const prev=wm(tab);let max=prev;for(const r of rows)if(r.ts>max)max=r.ts;const fresh=prev?rows.filter(r=>r.ts>prev).length:0;return{prev,max,fresh}}
+function renderMoment(el,d){el.innerHTML="";indexMoments(d);
+const rows=d.notifications.map(n=>({n,ts:stamp(n.happenedTime??n.happened_time??n.createTime)}));
+const w=water("moment",rows);
+el.appendChild(sum(w.prev?`共 ${rows.length} 条 · 上次读到 ${abs(w.prev)} · 新增 ${w.fresh} 条`:`共 ${rows.length} 条 · 首次加载，已记下当前位置`,w.fresh>0,"moment"));
+if(d.errors.length)el.appendChild(errbox(d.errors.join("\n")));
+if(!rows.length&&!d.errors.length){el.insertAdjacentHTML("beforeend",'<div class="empty">暂无社区通知</div>');wmSave("moment",w.max);return}
+let placed=false;
+for(const r of rows){const n=r.n;if(w.prev&&w.fresh>0&&!placed&&r.ts<=w.prev){el.appendChild(sinceEl(w.prev,w.fresh));placed=true}
+const i=describe(n,d.users,d.comments,d.moments),rt=n.happenedTime??n.happened_time??n.createTime;
+el.appendChild(card({user:i.actor.u||i.actor,name:i.actor.name,tag:i.tl,time:rel(rt),rawTime:cut(rt,40),desc:i.desc,
+meta:[n.id&&"ID "+cut(n.id,28),n.momentId&&"动态 #"+cut(n.momentId,24),n.commentId&&"评论 #"+cut(n.commentId,24)],replyable:REPLYABLE.has(i.tl)&&!!n.momentId,momentId:n.momentId,momentTitle:i.mt,targetCommentId:n.commentId||undefined}))}
+if(w.prev&&w.fresh>0&&!placed)el.appendChild(sinceEl(w.prev,w.fresh));
+wmSave("moment",w.max)}
+function renderInapp(el,d){el.innerHTML="";
+const rows=d.items.map(it=>({it,ts:stamp(it.createTime??it.notification?.createTime)}));
+const w=water("inapp",rows);
+el.appendChild(sum(w.prev?`共 ${rows.length} 条 · 上次读到 ${abs(w.prev)} · 新增 ${w.fresh} 条`:`共 ${rows.length} 条 · 首次加载，已记下当前位置`,w.fresh>0,"inapp"));
+if(d.errors.length)el.appendChild(errbox(d.errors.join("\n")));
+if(!rows.length&&!d.errors.length){el.insertAdjacentHTML("beforeend",'<div class="empty">暂无站内推送</div>');wmSave("inapp",w.max);return}
+let placed=false;
+for(const r of rows){const it=r.it;if(w.prev&&w.fresh>0&&!placed&&r.ts<=w.prev){el.appendChild(sinceEl(w.prev,w.fresh));placed=true}
+const n=it.notification||{},tl=IM[n.type]??String(n.type??"通知"),rt=it.createTime??n.createTime;
+el.appendChild(card({user:null,name:"Kimi",tag:tl,time:rel(rt),rawTime:cut(rt,40),desc:n.title||tl,content:n.content?cut(n.content,140):"",meta:[it.id&&"ID "+cut(it.id,28),n.deeplink&&"跳转 "+cut(n.deeplink,70)]}))}
+if(w.prev&&w.fresh>0&&!placed)el.appendChild(sinceEl(w.prev,w.fresh));
+wmSave("inapp",w.max)}
+/* ---------- 二维码：可复用控制器，登录页 / 账户弹窗各一份 ---------- */
+function device(){const k="kfp_qr_wid";let d=localStorage.getItem(k);if(!d){const b=new Uint8Array(8);try{crypto.getRandomValues(b)}catch{for(let i=0;i<8;i++)b[i]=Math.random()*256|0}d="w"+Date.now().toString(36)+Array.from(b).map(x=>x.toString(16).padStart(2,"0")).join("");localStorage.setItem(k,d)}return d}
+const qcontent=c=>`https://www.kimi.com/wechat/mp/auth?id=${encodeURIComponent(c)}&device_id=${encodeURIComponent(device())}`;
+function setSt(t,tone){line($("qrSt"),t,tone,autoIco(tone))}
+function heartbeat(ms,fn){let timer=0,worker=null,url="";const vis=()=>{if(!document.hidden)fn()};document.addEventListener("visibilitychange",vis);
+try{url=URL.createObjectURL(new Blob([`var t=null;self.onmessage=function(e){if(e.data==='start'){if(t)clearInterval(t);t=setInterval(function(){self.postMessage(1)},${ms})}else if(e.data==='stop'){if(t)clearInterval(t);t=null}}`],{type:"text/javascript"}));worker=new Worker(url);worker.onmessage=()=>fn();worker.postMessage("start")}catch{const loop=()=>{fn();timer=setTimeout(loop,ms)};timer=setTimeout(loop,ms)}
+return()=>{document.removeEventListener("visibilitychange",vis);clearTimeout(timer);if(worker)worker.terminate();if(url)URL.revokeObjectURL(url)}}
+const fmtLeft=ms=>{const s=Math.max(0,Math.ceil(ms/1000));return`${String(Math.floor(s/60)).padStart(2,"0")}:${String(s%60).padStart(2,"0")}`};
+function makeQr(cfg){let tok=0,dead=0,cd=null,stopHb=()=>{},busy=false,last=0,code="";
+const S=cfg.status;
+const onVis=()=>{if(!document.hidden)tickCd()};
+function tickCd(){if(!dead)return;const left=dead-Date.now();if(left<=0){expire();return}
+if(cfg.cdEl){cfg.cdEl.innerHTML=IC("clock")+"<span>有效剩余 "+esc(fmtLeft(left))+"</span>";cfg.cdEl.className="count"+(left<=6e4?" warn":"")}}
+function clearCd(){clearInterval(cd);cd=null;document.removeEventListener("visibilitychange",onVis);dead=0;if(cfg.cdEl){cfg.cdEl.innerHTML="";cfg.cdEl.className="count"}}
+function startCd(d){clearCd();dead=d;tickCd();cd=setInterval(tickCd,1000);document.addEventListener("visibilitychange",onVis)}
+function stopPoll(){stopHb();stopHb=()=>{}}
+function reset(){if(cfg.boxEl)cfg.boxEl.hidden=true;if(cfg.genBtn)cfg.genBtn.hidden=false;if(cfg.cancelBtn)cfg.cancelBtn.hidden=true;if(cfg.wrap)cfg.wrap.innerHTML=""}
+function stop(){tok++;stopPoll();clearCd();reset()}
+function expire(){stop();S("二维码已过期，请重新生成","err");if(cfg.expireTip)cfg.expireTip()}
+function finish(tone,text){S(text,tone);stop()}
+function poll(){stopPoll();const deadline=Date.now()+TTL;startCd(deadline);busy=false;last=0;const my=tok;
+const tick=async()=>{if(my!==tok)return;const now=Date.now();if(busy||now-last<900)return;if(now>deadline){expire();return}last=now;busy=true;
+try{const d=await req(U.qrStatus,{code},false);if(my!==tok)return;const s=String(d?.status??d?.state??"").toUpperCase();
+if(s.includes("SUCCESS")){const a=pick(d,["accessToken","access_token","token"]),r=pick(d,["refreshToken","refresh_token"]);if(!a||!r){finish("err","登录成功但令牌不完整，请重新生成二维码");return}finish("ok","登录成功");cfg.onSuccess(r,a,device());return}
+if(s.includes("EXPIRED")){expire();return}
+S(s.includes("SCANNED")?"已扫码，请在手机上点确认":"等待扫码…",s.includes("SCANNED")?"wait":"");
+if(s.includes("SCANNED")&&cfg.tipEl)cfg.tipEl.textContent="手机已扫码，点一下确认登录。"}
+catch{last=0}finally{busy=false}};
+stopHb=heartbeat(1200,tick)}
+async function gen(){const my=++tok;stopPoll();clearCd();reset();
+if(cfg.boxEl)cfg.boxEl.hidden=false;if(cfg.genBtn)cfg.genBtn.hidden=true;if(cfg.cancelBtn)cfg.cancelBtn.hidden=false;
+if(cfg.widEl)cfg.widEl.value=device();if(cfg.codeEl)cfg.codeEl.value="";S("正在获取二维码…","");
+let c="";try{const d=await req(U.createQr,{},false);c=d?.code?String(d.code):d?.qrCode?String(d.qrCode):""}catch(e){if(my!==tok)return;S("生成失败："+friendly(e.message),"err");reset();return}
+if(my!==tok)return;if(!c){S("服务端未返回登录码（code）","err");reset();return}
+code=c;if(cfg.codeEl)cfg.codeEl.value=c;
+try{cfg.wrap.innerHTML=QR.svg(qcontent(c))}catch(e){cfg.wrap.innerHTML=`<span style="font-size:11px;color:var(--er)">生成失败：${esc(e.message)}</span>`;S("二维码渲染失败","err");reset();return}
+if(cfg.tipEl)cfg.tipEl.textContent="用 Kimi App 扫描左侧二维码，扫出后在手机点确认即可登录。";
+S("请用 Kimi App 扫码","");poll()}
+function cancel(){stop();S("","")}
+return{gen,cancel,stop,reset}}
+const qrPanel=makeQr({wrap:$("qrWrap"),boxEl:$("qrBox"),codeEl:$("qrCode"),widEl:$("qrWid"),cdEl:$("qrCountdown"),genBtn:$("btnGenQr"),cancelBtn:$("btnCancelQr"),tipEl:$("qrTip"),
+status:setSt,expireTip:()=>{$("qrTip").textContent="二维码已过期，点「生成登录二维码」重新获取。"},
+onSuccess:(r,a,d)=>{at=a;rf=r;did=d;putAccount(r,"");keep(a);save();onLogin("扫码登录成功")}});
+const qrModal=makeQr({wrap:$("mQrWrap"),codeEl:$("mQrCode"),widEl:$("mQrWid"),cdEl:$("mCountdown"),genBtn:$("mGenQr"),cancelBtn:$("mCancelQr"),tipEl:$("mQrTip"),
+status:(t,tone)=>line($("mQrSt"),t,tone,autoIco(tone)),
+expireTip:()=>{$("mQrTip").textContent="二维码已过期，点「生成登录二维码」重新获取。"},
+onSuccess:(r)=>modalGotRt(r,"扫码登录成功，已取得 refresh_token")});
+/* ---------- 登录：从 kimi.com 带回 refresh_token ---------- */
+/* 这段脚本要在「已登录的 kimi.com 标签页」里跑，由那一页自己读自己的 localStorage 再 postMessage 回来 */
+const EXTRACT_SRC="("+function(){
+try{
+var rt="";
+for(var i=0;i<localStorage.length;i++){
+var k=localStorage.key(i)||"",v=localStorage.getItem(k)||"";
+var m=v.match(/"(?:refresh_?token|refreshToken|rt)"\s*:\s*"([^"]{20,})"/i);
+if(m){rt=m[1];break}
+if(/refresh|token|auth|session/i.test(k)&&v.length>40&&v.charAt(0)!=="{"&&v.charAt(0)!=="["){rt=v;break}
+}
+if(!rt){console.warn("[Kimi 消息中心] 没在 localStorage 找到 refresh_token，请确认已经登录；也可在 DevTools → Application → Local Storage 手动复制。");return}
+var payload={__kimi_rt:1,refreshToken:rt};
+var sent=false;
+try{if(window.opener&&!window.opener.closed){window.opener.postMessage(payload,"*");sent=true}}catch(e){}
+try{if(window.parent!==window){window.parent.postMessage(payload,"*");sent=true}}catch(e){}
+if(sent){console.log("[Kimi 消息中心] refresh_token 已回传，切回面板即可自动登录。");try{window.opener&&window.opener.focus()}catch(e){}}
+else if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(rt).then(function(){console.log("[Kimi 消息中心] 已复制 rt，回面板点「从剪贴板填入」")},function(){console.log("[Kimi 消息中心] rt:",rt)})}
+else{console.log("[Kimi 消息中心] rt:",rt)}
+}catch(e){console.warn("[Kimi 消息中心] 提取失败：",e.message)}
+}.toString()+")()";
+function setBridge(t,tone){line($("bridgeSt"),t,tone,autoIco(tone))}
+/* ---------- 账户切换 UI：事件委托 + 页面内弹窗，不依赖 prompt / confirm / alert ---------- */
+let acctMode="add",acctEditId="",delTargetId="",mTab="paste";
+function renderAccounts(){const l=accList(),box=$("acctList"),cur=accGet();
+$("acctName").textContent=cur&&rf?cur.name:(l.length?"选账户":"账户");box.innerHTML="";
+if(!l.length){box.innerHTML='<div class="acct-none">还没有保存的账户，登录或粘贴 rt 后会自动存一个</div>';return}
+for(const a of l){const d=document.createElement("div");d.className="acct-item"+(a.id===activeId&&rf?" cur":"");d.dataset.id=a.id;
+d.innerHTML=`<div class="info"><b>${esc(a.name)}</b><small>${esc(mask(a.refreshToken))}</small></div><button class="op" data-op="edit" title="修改">${IC("edit")}</button><button class="op" data-op="del" title="删除">${IC("close")}</button>`;
+box.appendChild(d)}}
+function mStatus(t,tone){line($("mStatus"),t,tone,autoIco(tone),"m-status")}
+function setMTab(i){mTab=["qr","paste","bridge"][i]||"paste";
+$("mInd").style.transform=`translateX(${i*100}%)`;
+document.querySelectorAll(".m-tab").forEach((t,j)=>{t.className="m-tab"+(j===i?" on":"");t.setAttribute("aria-selected",j===i?"true":"false")});
+document.querySelectorAll(".m-pane").forEach(p=>p.hidden=p.dataset.p!==mTab)}
+function closeAcctModal(){qrModal.stop();bridgeTarget="panel";$("acctMask").classList.add("hidden")}
+function modalGotRt(v,from){v=String(v||"").trim();if(!v)return;$("acctNewRt").value=v;setMTab(1);mStatus(from+"：refresh_token 已填入，点底部保存后生效","ok")}
+function openAcctModal(mode,id){acctMode=mode;acctEditId=id||"";bridgeTarget="modal";const a=accList().find(x=>x.id===id);
+$("acctTitle").textContent=mode==="edit"?"修改账户":"新建账户";
+$("acctDesc").textContent=mode==="edit"?"三种方式可重新取 rt 覆盖这个账户；若只改昵称、rt 不变，则不会重新登录。":"三种方式都能拿到 refresh_token，拿到后自动填入「粘贴 rt」，点底部保存即可。各账户凭证与「上次读到哪」互不影响。";
+$("acctNewName").value=mode==="edit"?(a?a.name:""):"";
+$("acctNewRt").value=mode==="edit"?(a?a.refreshToken||"":""):"";
+$("mDid").value=mode==="edit"?(a?a.deviceId||"":""):"";$("mSid").value=mode==="edit"?(a?a.sessionId||"":""):"";
+$("acctOk").textContent=mode==="edit"?"保存修改":"保存并切换";
+qrModal.stop();mStatus("","");setMTab(1);$("acctMask").classList.remove("hidden");
+setTimeout(()=>{try{$("acctNewName").focus()}catch(e){}},0)}
+document.querySelectorAll(".m-tab").forEach((t,i)=>t.onclick=()=>setMTab(i));
+$("mGenQr").onclick=()=>qrModal.gen();$("mCancelQr").onclick=()=>qrModal.cancel();
+let mEmbedShown=true;
+function mEmbedUrl(){return $("mEmbedUrl").value.trim()||"https://www.kimi.com"}
+$("mLoadEmbed").onclick=()=>{const u=mEmbedUrl();try{$("mKimiFrame").src=u}catch(e){}mStatus("内嵌页已指向 "+u,"")};
+$("mEmbedUrl").onkeydown=e=>{if(e.key==="Enter")$("mLoadEmbed").onclick()};
+$("mReloadEmbed").onclick=()=>{const f=$("mKimiFrame");try{f.src=f.src}catch(e){}mStatus("内嵌页已重载","")};
+$("mToggleEmbed").onclick=()=>{mEmbedShown=!mEmbedShown;$("mFrameBox").hidden=!mEmbedShown;
+$("mToggleEmbed").innerHTML=IC(mEmbedShown?"frame":"plus")+(mEmbedShown?"隐藏内嵌页":"显示内嵌页")};
+$("mOpen").onclick=()=>{const u=mEmbedUrl();try{window.open(u,"kimi_login")}catch(e){}mStatus("已打开兜底页；登录完跑脚本或点书签，rt 会自动填入这里","")};
+$("mCopy").onclick=async()=>{try{await navigator.clipboard.writeText(EXTRACT_SRC);mStatus("脚本已复制；F12 把 Console 切到 kimi.com 页面，粘贴回车即可","ok")}catch(e){mStatus("复制失败，请从登录区「复制提取脚本」取","err")}};
+$("mPaste").onclick=async()=>{try{const v=(await navigator.clipboard.readText()).trim();if(!v){mStatus("剪贴板为空","err");return}modalGotRt(v,"从剪贴板填入")}catch(e){mStatus("读剪贴板失败，请手动粘贴到「粘贴 rt」：" + friendly(e.message),"err")}};
+$("acctCancel").onclick=closeAcctModal;
+$("acctMask").onclick=e=>{if(e.target===$("acctMask"))closeAcctModal()};
+$("acctOk").onclick=()=>{
+const name=$("acctNewName").value.trim(),v=$("acctNewRt").value.trim(),d=$("mDid").value.trim(),s=$("mSid").value.trim();
+const old=acctMode==="edit"?accList().find(x=>x.id===acctEditId):null;
+if(acctMode==="edit"&&!old){closeAcctModal();return}
+if(!v){mStatus("refresh_token 不能为空","err");return}
+if(old&&v===(old.refreshToken||"")){const l=accList(),a=l.find(x=>x.id===acctEditId);if(name&&a)a.name=name;accSave(l);renderAccounts();if(name&&old.id===activeId)$("acctName").textContent=name;
+closeAcctModal();setBridge("已保存「"+(a?a.name:old.name)+"」的修改，rt 未改动，无需重新登录","ok");return}
+let a=old;if(!a)a=putAccount(v,name);
+const list=accList(),cur=list.find(x=>x.id===a.id)||a;
+if(name)cur.name=name;cur.refreshToken=v;cur.accessToken="";cur.accessExp=0;cur.deviceId=d;cur.sessionId=s;accSave(list);
+rf=v;at="";aexp=0;did=d;sid=s;rpromise=null;activeId=cur.id;sync();renderAccounts();$("acctName").textContent=cur.name;
+$("rfInput").value=v;$("didInput").value=d;$("sidInput").value=s;
+$("acctMenu").classList.add("hidden");closeAcctModal();setBridge("已保存账户「"+cur.name+"」，正在登录…","ok");doLogin()};
+function askDel(id){const a=accList().find(x=>x.id===id);if(!a)return;delTargetId=id;
+$("delDesc").textContent="将移除「"+a.name+"」及本机保存的 rt，该账户的「上次读到哪」记录也会一并删除。";$("delMask").classList.remove("hidden")}
+$("delCancel").onclick=()=>{$("delMask").classList.add("hidden");delTargetId=""};
+$("delMask").onclick=e=>{if(e.target===$("delMask")){$("delMask").classList.add("hidden");delTargetId=""}};
+$("delOk").onclick=()=>{$("delMask").classList.add("hidden");if(delTargetId)delAccount(delTargetId);delTargetId=""};
+$("btnAcct").onclick=e=>{e.stopPropagation();renderAccounts();$("acctMenu").classList.toggle("hidden")};
+$("acctList").onclick=e=>{const t=e.target,row=t.closest?t.closest("[data-id]"):null;if(!row)return;
+const id=row.dataset.id,op=t.closest?t.closest("[data-op]"):null;
+if(op&&op.dataset.op==="del"){askDel(id);return}
+if(op&&op.dataset.op==="edit"){openAcctModal("edit",id);return}
+switchAccount(id);$("acctMenu").classList.add("hidden")};
+document.addEventListener("click",e=>{const m=$("acctMenu");if(!m.classList.contains("hidden")&&!m.contains(e.target)&&!$("btnAcct").contains(e.target))m.classList.add("hidden")});
+$("btnAddAcct").onclick=()=>openAcctModal("add");
+$("scriptBox").value=EXTRACT_SRC;
+const BMHREF="javascript:"+EXTRACT_SRC.replace(/\s+/g," ").replace(/%/g,"%25").replace(/#/g,"%23");
+$("bmLink").href=BMHREF;$("mBmLink").href=BMHREF;
+$("bmLink").onclick=e=>{e.preventDefault();setBridge("把这个按钮拖到书签栏；之后在已登录的 kimi.com 标签页点一下书签，token 就会自动回传。","")};
+$("mBmLink").onclick=e=>{e.preventDefault();mStatus("把这个按钮拖到书签栏；在已登录的 kimi.com 页面点一下，rt 会自动填入本弹窗","")};
+$("btnOpen").onclick=()=>{const u=$("embedUrl").value.trim()||"https://www.kimi.com";try{window.open(u,"kimi_login")}catch(e){}setBridge("已在新标签打开兜底页；登录完跑一次脚本或点书签，rt 会自动回传本面板。","")};
+$("btnTryFrame").onclick=()=>{try{const w=$("kimiFrame").contentWindow;let rt="";for(let i=0;i<w.localStorage.length;i++){const k=w.localStorage.key(i)||"",v=w.localStorage.getItem(k)||"";const m=v.match(/"(?:refresh_?token|refreshToken|rt)"\s*:\s*"([^"]{20,})"/i);if(m){rt=m[1];break}if(/refresh|token|auth|session/i.test(k)&&v.length>40&&v.charAt(0)!=="{"&&v.charAt(0)!=="["){rt=v;break}}
+if(!rt){setBridge("内嵌页里还没找到 rt：请先在里面完成登录；若区域空白，说明站点拒绝被嵌套，请用兜底页。","err");return}acceptRt(rt,"从内嵌帧读到")
+}catch(e){setBridge("浏览器按同源策略拦了跨源读取（预期行为）。请在内嵌页里跑一次提取脚本 / 点书签，或直接从 DevTools 复制 rt 粘贴。","err")}};
+let embedShown=true;
+function loadEmbed(){const u=$("embedUrl").value.trim()||"https://www.kimi.com";try{$("kimiFrame").src=u}catch(e){}setBridge("内嵌页已指向 "+u,"")}
+$("btnLoadEmbed").onclick=loadEmbed;
+$("embedUrl").onkeydown=e=>{if(e.key==="Enter")loadEmbed()};
+$("btnToggleEmbed").onclick=()=>{embedShown=!embedShown;$("frameBox").hidden=!embedShown;
+$("btnToggleEmbed").innerHTML=IC(embedShown?"frame":"plus")+(embedShown?"隐藏内嵌页":"显示内嵌页");
+$("embedNote").textContent=embedShown?"内嵌页常驻在本页，不跳转":"已隐藏内嵌页，可用「新标签打开兜底」"};
+$("btnReloadEmbed").onclick=()=>{const f=$("kimiFrame");try{f.src=f.src}catch(e){}setBridge("内嵌页已重载","")};
+$("btnCopy").onclick=async()=>{try{await navigator.clipboard.writeText(EXTRACT_SRC);setBridge("脚本已复制。F12 打开 DevTools，把 Console 的上下文切到 kimiFrame，粘贴回车即可；若剪贴板被拦，下方文本框可手动全选复制。","ok");$("scriptBox").hidden=false}catch(e){$("scriptBox").hidden=false;setBridge("自动复制失败，请手动全选下方文本框复制。","err")}};
+$("btnPaste").onclick=async()=>{try{const v=(await navigator.clipboard.readText()).trim();if(!v){setBridge("剪贴板为空","err");return}acceptRt(v,"已从剪贴板填入")}catch(e){setBridge("读剪贴板失败（需 localhost / https 且允许权限），请直接粘贴到上方输入框："+friendly(e.message),"err")}};
+let lastRt="",lastAccept=0;
+function acceptRt(v,from){v=String(v||"").trim();if(!v)return;const now=Date.now();if(v===lastRt&&now-lastAccept<1500)return;lastRt=v;lastAccept=now;
+if(bridgeTarget==="modal"){modalGotRt(v,from);return}
+$("rfInput").value=v;if(rf&&v!==rf){at="";aexp=0;const a=putAccount(v,"");renderAccounts();setBridge(from+"：新 rt 已存为「"+a.name+"」并登录","ok")}else setBridge(from+" refresh_token，正在登录…","ok");doLogin()}
+window.addEventListener("message",e=>{const d=e.data;if(!d||d.__kimi_rt!==1||typeof d.refreshToken!=="string")return;acceptRt(d.refreshToken,"已从 kimi.com 收到")});
+/* ---------- 登录 / 刷新 ---------- */
+function doLogout(){if(rf){try{const h=head();if(at)h.Authorization="Bearer "+at;fetch(U.logout,{method:"POST",headers:h,body:JSON.stringify({refresh_token:rf})}).catch(()=>{})}catch{}}
+clearInterval(rtimer);rtimer=null;qrPanel.stop();qrModal.stop();sync();clear();at="";aexp=0;rf="";did="";sid="";rpromise=null;activeId="";
+$("configSec").classList.remove("hidden");$("btnLogout").classList.add("hidden");$("rfInput").value="";$("rfInput").placeholder="粘贴 refresh_token…";$("didInput").value="";$("sidInput").value="";
+line($("bridgeSt"),"");line($("loginSt"),"已退出当前账户（已保存账户仍在，点顶部可切回）");$("status").textContent="未登录";setSt("","");$("momentBody").innerHTML='<div class="empty">登录成功后点右上角刷新<br>加载社区与站内消息</div>';$("inappBody").innerHTML="";renderAccounts();requestAnimationFrame(fitViewport)}
+function onLogin(msg){if(rf){const cur=accGet();if(!cur||cur.refreshToken!==rf)putAccount(rf,"")}qrPanel.stop();$("rfInput").value="";$("rfInput").placeholder="粘贴新的 refresh_token 可添加账户…";$("configSec").classList.add("hidden");$("btnLogout").classList.remove("hidden");$("status").textContent=msg;line($("loginSt"),msg,"ok","check");renderAccounts();autoRefresh();refreshData()}
+async function doLogin(){const v=$("rfInput").value.trim(),d=$("didInput").value.trim(),s=$("sidInput").value.trim(),e=$("loginSt");
+if(v&&v!=="（已保存）"){const changed=v!==rf;if(changed){at="";aexp=0;did="";sid=""}rf=v;if(changed)putAccount(v,"")}if(d)did=d;if(s)sid=s;
+if(!rf){line(e,"请粘贴 refresh_token","err");return}line(e,"登录中…","","");try{await refresh();save();onLogin("登录成功，token 已保存")}catch(x){line(e,x.message,"err")}}
+if(location.protocol==="file:"){setSt("当前是 file:// 打开，扫码接口与剪贴板都会被浏览器拦截。请起本地服务：python3 -m http.server 8000","err");setBridge("file:// 下剪贴板与回传可能不可用，请用 http://localhost:8000 打开。","err")}
+let curTab=0;
+function fitViewport(){const v=document.querySelector(".viewport"),ps=document.querySelectorAll(".pane");if(!v||!ps.length)return;const h=ps[curTab]?.scrollHeight||0;if(h>0)v.style.height=h+"px"}
+function setTab(i){curTab=i;$("tabInd").style.transform=`translateX(${i*100}%)`;$("tabTrack").style.transform=`translateX(-${i*50}%)`;
+document.querySelectorAll(".tab").forEach((t,j)=>{t.className="tab"+(j===i?" on":"");t.setAttribute("aria-selected",j===i?"true":"false")});
+$("momentBody").setAttribute("aria-hidden",i!==0?"true":"false");$("inappBody").setAttribute("aria-hidden",i!==1?"true":"false");requestAnimationFrame(fitViewport)}
+document.querySelectorAll(".tab").forEach((t,i)=>t.onclick=()=>setTab(i));
+if(window.ResizeObserver){const ro=new ResizeObserver(()=>fitViewport());document.querySelectorAll(".pane").forEach(p=>ro.observe(p))}
+window.addEventListener("resize",fitViewport);
+$("btnGenQr").onclick=()=>qrPanel.gen();$("btnCancelQr").onclick=()=>qrPanel.cancel();
+$("btnLogout").onclick=()=>$("logoutMask").classList.remove("hidden");$("logoutCancel").onclick=()=>$("logoutMask").classList.add("hidden");$("logoutConfirm").onclick=()=>{$("logoutMask").classList.add("hidden");doLogout()};
+$("logoutMask").onclick=e=>{if(e.target===$("logoutMask"))$("logoutMask").classList.add("hidden")};document.addEventListener("keydown",e=>{if(e.key!=="Escape")return;$("logoutMask").classList.add("hidden");closeAcctModal();$("delMask").classList.add("hidden");delTargetId="";$("acctMenu").classList.add("hidden")});
+$("logoutAll").onclick=()=>{$("logoutMask").classList.add("hidden");try{Object.keys(localStorage).filter(k=>k.startsWith(RKEY+"_")).forEach(k=>localStorage.removeItem(k));localStorage.removeItem(ACC);localStorage.removeItem(KEY)}catch{}doLogout()};
+$("btnLogin").onclick=doLogin;
+$("btnRefresh").onclick=async()=>{const b=$("btnRefresh");b.disabled=true;$("status").textContent="加载中…";$("momentBody").innerHTML='<div class="empty">拉取中…</div>';$("inappBody").innerHTML="";
+try{await ensure();const[m,i]=await Promise.all([loadMoment(),loadInapp()]);renderMoment($("momentBody"),m);renderInapp($("inappBody"),i);requestAnimationFrame(fitViewport);$("status").textContent=`${m.notifications.length+i.items.length} 条`}catch(e){$("momentBody").innerHTML=`<div class="errbox">${esc(friendly(e.message))}</div>`;$("status").textContent="加载失败，请重试"}b.disabled=false};
+async function refreshData(){const mine=++dgen;try{await ensure();const[m,i]=await Promise.all([loadMoment(),loadInapp()]);if(mine!==dgen)return;renderMoment($("momentBody"),m);renderInapp($("inappBody"),i);requestAnimationFrame(fitViewport);$("status").textContent=`${m.notifications.length+i.items.length} 条`}
+catch(e){if(mine!==dgen)return;if(/没有 refresh_token/.test(e.message||"")){$("configSec").classList.remove("hidden");$("btnLogout").classList.add("hidden")}$("status").textContent="请重新登录"}}
+(function init(){
+let l=accList();
+if(!l.length){let old=null;try{old=JSON.parse(localStorage.getItem(KEY))}catch{}if(old?.refreshToken){rf=old.refreshToken;at=old.accessToken||"";aexp=Number(old.accessExp)||0;did=old.deviceId||"";sid=old.sessionId||"";putAccount(rf,"默认账户")}}
+l=accList();if(l.length){const c=l[0];activeId=c.id;rf=c.refreshToken||"";at=c.accessToken||"";aexp=Number(c.accessExp)||0;did=c.deviceId||"";sid=c.sessionId||"";$("rfInput").value="";$("rfInput").placeholder="已保存 "+l.length+" 个账户，留空即沿用；粘贴新的可添加";onLogin("已恢复「"+c.name+"」")}else renderAccounts();
+setTab(0)})();
+})();
+</script>
+</body>
+</html>
