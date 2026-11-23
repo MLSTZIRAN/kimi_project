@@ -6,19 +6,25 @@
 <meta name="theme-color" content="#1B6E43">
 <title>消息中心 · Kimi</title>
 <style>
-:root{--p:#1b6e43;--on-p:#fff;--pc:#c9edd6;--on-pc:#0b3d22;--sc:#dcefe1;--on-sc:#1b3a26;--tc:#c4ece3;--on-tc:#0a3b31;--sf:#edf3ee;--scl:#e8f0e9;--sc2:#e1ece3;--sc3:#e1ede3;--on:#16261b;--ov:#4b6353;--ol:#c8d9cd;--olv:#deeae0;--er:#ba1a1a;--ec:#ffdad6;--sh:0 1px 2px rgba(15,45,25,.07),0 2px 10px rgba(15,45,25,.05)}
+:root{--p:#1b6e43;--on-p:#fff;--pc:#c9edd6;--on-pc:#0b3d22;--sc:#dcefe1;--on-sc:#1b3a26;--tc:#c4ece3;--on-tc:#0a3b31;--sf:#edf3ee;--scl:#e8f0e9;--sc2:#e1ece3;--sc3:#e1ede3;--on:#16261b;--ov:#4b6353;--ol:#c8d9cd;--olv:#deeae0;--er:#ba1a1a;--ec:#ffdad6;--sh:0 1px 2px rgba(15,45,25,.07),0 2px 10px rgba(15,45,25,.05);--ctl:36px}
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
 body{font-family:Roboto,-apple-system,"PingFang SC","Noto Sans SC","Helvetica Neue",sans-serif;background:var(--sf);color:var(--on);font-size:14px;min-height:100vh;-webkit-font-smoothing:antialiased}
-.shell{max-width:600px;margin:0 auto;padding:12px 16px 40px}
+.shell{max-width:600px;margin:0 auto;padding:clamp(10px,2.4vw,16px) clamp(10px,3.2vw,16px) calc(40px + env(safe-area-inset-bottom,0px))}
+.bar{flex-wrap:wrap;row-gap:8px}
+.bar-r{margin-left:auto;flex-wrap:wrap;justify-content:flex-end}
+.meta,.desc,.content{overflow-wrap:anywhere}
 .bar{position:sticky;top:0;z-index:6;display:flex;align-items:center;gap:10px;padding:12px 2px 14px;background:var(--sf)}
 .bar-l{display:flex;align-items:center;gap:10px;flex:1;min-width:0}
 .mark{width:40px;height:40px;flex:none;border-radius:14px;background:var(--pc);color:var(--p);display:grid;place-items:center;font-size:22px}
 .ttl{font-size:19px;font-weight:700;letter-spacing:.2px;line-height:1.2}
 .sub{font-size:11px;color:var(--ov);margin-top:2px}
 .bar-r{display:flex;align-items:center;gap:8px}
-.pill{background:var(--pc);color:var(--on-pc);border-radius:999px;padding:5px 12px;font-size:11px;font-weight:700;white-space:nowrap}
-.icon{width:38px;height:38px;border:0;border-radius:50%;background:var(--sc2);color:var(--p);font-size:19px;cursor:pointer;line-height:1}
+/* 顶栏所有可点控件共用 --ctl：不再出现 38/32/28/27 混排 */
+.pill{display:inline-block;height:var(--ctl);line-height:var(--ctl);padding:0 12px;vertical-align:middle;background:var(--pc);color:var(--on-pc);border-radius:999px;font-size:11px;font-weight:700;white-space:nowrap}
+.icon{width:var(--ctl);height:var(--ctl);flex:none;border:0;border-radius:50%;background:var(--sc2);color:var(--p);cursor:pointer;display:inline-flex;align-items:center;justify-content:center;transition:background .2s,transform .16s}
 .icon:hover{background:var(--sc3)}
+.icon:active{transform:scale(.92)}
+.icon:disabled{opacity:.45;cursor:not-allowed}
 button{font-family:inherit}
 .btn-f,.btn-t,.btn-x{border:0;border-radius:999px;padding:10px 20px;font-size:13px;font-weight:600;cursor:pointer}
 .btn-f{background:var(--p);color:var(--on-p);box-shadow:var(--sh)}
@@ -35,8 +41,24 @@ button{font-family:inherit}
 .cfg-head small{display:block;font-size:11px;color:var(--ov);margin-top:2px}
 .divider{height:1px;background:var(--olv);margin:16px 0}
 label{display:block;font-size:11px;font-weight:600;color:var(--ov);margin:0 0 4px}
-input,textarea,select{width:100%;background:var(--sf);border:1px solid var(--ol);border-radius:12px;padding:9px 11px;font-size:12px;color:var(--on);outline:none;font-family:inherit}
-input:focus,textarea:focus,select:focus{border:2px solid var(--p);padding:8px 10px}
+input,textarea{width:100%;background:var(--sf);border:1px solid var(--ol);border-radius:12px;padding:9px 11px;font-size:12px;color:var(--on);outline:none;font-family:inherit}
+input:focus,textarea:focus{border:2px solid var(--p);padding:8px 10px}
+/* 下拉菜单：去掉系统箭头，换成主题绿圆底箭头；浅绿填充 / 圆角 / 焦点光环与页面一套 */
+select{
+  appearance:none;-webkit-appearance:none;-moz-appearance:none;
+  width:100%;box-sizing:border-box;min-height:40px;
+  padding:9px 42px 9px 13px;
+  background-color:var(--scl);
+  background-image:url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2024%2024'%3E%3Ccircle%20cx='12'%20cy='12'%20r='11'%20fill='%23c9edd6'/%3E%3Cpath%20d='M7%2010l5%205%205-5'%20fill='none'%20stroke='%231b6e43'%20stroke-width='2.2'%20stroke-linecap='round'%20stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;background-position:right 9px center;background-size:24px 24px;
+  border:1px solid var(--ol);border-radius:14px;
+  color:var(--on-pc);font-size:12px;font-weight:600;font-family:inherit;line-height:1.4;
+  cursor:pointer;outline:none;
+  transition:border-color .2s,box-shadow .2s,background-color .2s}
+select:hover{background-color:var(--sc2);border-color:var(--p)}
+select:focus{border:2px solid var(--p);padding:8px 41px 8px 12px;background-color:var(--sf);box-shadow:0 0 0 3px rgba(27,110,67,.13)}
+select:disabled{opacity:.5;cursor:not-allowed;background-color:var(--sc2);border-color:var(--olv)}
+select option{background:var(--sf);color:var(--on);font-weight:500;padding:8px}
 textarea{resize:vertical;font-family:ui-monospace,"SF Mono",Menlo,monospace;font-size:11px;line-height:1.5;margin-bottom:8px}
 input[readonly]{background:var(--sc2);color:var(--ov);font-family:ui-monospace,Menlo,monospace;font-size:10px}
 .row{display:flex;gap:8px;align-items:center;margin-bottom:8px;flex-wrap:wrap}
@@ -59,26 +81,27 @@ input[readonly]{background:var(--sc2);color:var(--ov);font-family:ui-monospace,M
 .embed-bar{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
 .embed-warn{font-size:10.5px;line-height:1.6;color:var(--ov);background:var(--sc2);border-radius:10px;padding:8px 10px;margin-top:8px}
 .acct-wrap{position:relative}
-.acct-btn{display:flex;align-items:center;gap:5px;border:0;background:var(--pc);color:var(--on-pc);border-radius:999px;padding:8px 12px;font-size:11px;font-weight:700;cursor:pointer;max-width:124px}
-.acct-btn .n{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.acct-menu{position:absolute;right:0;top:calc(100% + 8px);z-index:20;width:252px;background:var(--sf);border:1px solid var(--olv);border-radius:18px;box-shadow:0 12px 34px rgba(15,45,25,.18);padding:10px}
-.acct-menu h4{font-size:11px;color:var(--ov);font-weight:600;margin:2px 4px 8px}
-.acct-item{display:flex;align-items:center;gap:6px;padding:9px 10px;border-radius:12px;margin-bottom:4px;background:var(--scl);cursor:pointer;transition:background .2s}
-.acct-item:hover{background:var(--sc2)}
-.acct-item.cur{background:var(--pc);color:var(--on-pc)}
+.acct-btn{display:inline-flex;align-items:center;justify-content:center;gap:5px;height:var(--ctl);padding:0 12px;box-sizing:border-box;border:0;background:var(--pc);color:var(--on-pc);border-radius:999px;font-size:11px;font-weight:700;cursor:pointer;max-width:124px;transition:background .2s,transform .16s}
+.acct-btn:hover{background:#bde5cb}
+.acct-btn:active{transform:scale(.97)}
+.acct-btn .n{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
+/* 账户下拉：主题绿小箭头 + 入场动效 + 规整卡片 */
+.acct-menu{position:absolute;right:0;top:calc(100% + 10px);z-index:20;width:252px;background:var(--sf);border:1px solid var(--olv);border-radius:18px;box-shadow:0 14px 38px rgba(15,45,25,.2);padding:10px;transform-origin:top right;animation:menuIn 200ms var(--md-enter) both}
+.acct-menu::before{content:"";position:absolute;top:-7px;right:22px;width:12px;height:12px;background:var(--sf);border-left:1px solid var(--olv);border-top:1px solid var(--olv);border-radius:3px 0 0 0;transform:rotate(45deg)}
+@keyframes menuIn{from{opacity:0;transform:translateY(-10px) scale(.96)}to{opacity:1;transform:none}}
+.acct-menu h4{display:flex;align-items:center;font-size:10.5px;color:var(--ov);font-weight:700;letter-spacing:.3px;margin:2px 4px 9px}
+.acct-menu h4::before{content:"";width:6px;height:6px;flex:none;border-radius:50%;background:var(--p);margin-right:6px}
+.acct-item{display:flex;align-items:center;gap:6px;padding:9px 10px;border:1px solid transparent;border-radius:13px;margin-bottom:5px;background:var(--scl);cursor:pointer;transition:background .2s,border-color .2s,transform .16s}
+.acct-item:hover{background:var(--sc2);border-color:var(--ol)}
+.acct-item:active{transform:scale(.985)}
+.acct-item.cur{background:var(--pc);color:var(--on-pc);border-color:var(--p);box-shadow:inset 3px 0 0 var(--p)}
 .acct-item .info{flex:1;min-width:0}
 .acct-item .info b{display:block;font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .acct-item .info small{display:block;font-size:10px;opacity:.7;font-family:ui-monospace,Menlo,monospace;margin-top:2px}
-.acct-item .op{border:0;background:transparent;color:inherit;font-size:12px;cursor:pointer;opacity:.65;padding:2px 4px}
-.acct-item .op:hover{opacity:1}
-.acct-add{width:100%;border:1px dashed var(--p);background:transparent;color:var(--p);border-radius:12px;padding:9px;font-size:11px;font-weight:700;cursor:pointer;margin-top:4px}
-.tabs{position:relative;display:flex;background:var(--sc2);border-radius:999px;padding:4px;margin-bottom:14px;isolation:isolate}
-.tab-ind{position:absolute;z-index:0;top:4px;left:4px;width:calc(50% - 4px);height:calc(100% - 8px);border-radius:999px;background:var(--p);box-shadow:var(--sh);transition:transform .34s cubic-bezier(.22,.61,.36,1)}
-.tab{position:relative;z-index:1;flex:1;border:0;background:transparent;border-radius:999px;padding:10px;font-size:13px;font-weight:600;color:var(--ov);cursor:pointer;transition:color .26s ease}
-.tab.on{color:#fff}
-.viewport{overflow:hidden;transition:height .3s cubic-bezier(.22,.61,.36,1)}
-.track{display:flex;align-items:flex-start;width:200%;transition:transform .34s cubic-bezier(.22,.61,.36,1);will-change:transform}
-.pane{width:50%;flex:none;min-width:0}
+.acct-item .op{border:0;background:transparent;color:inherit;font-size:12px;cursor:pointer;opacity:.65;padding:2px 4px;border-radius:6px}
+.acct-item .op:hover{opacity:1;background:rgba(27,110,67,.1)}
+.acct-add{width:100%;border:1px dashed var(--p);background:transparent;color:var(--p);border-radius:13px;padding:9px;font-size:11px;font-weight:700;cursor:pointer;margin-top:4px;transition:background .2s}
+.acct-add:hover{background:var(--pc)}
 .list{min-height:120px}
 .sum{display:flex;align-items:center;gap:8px;background:var(--pc);color:var(--on-pc);border-radius:14px;padding:10px 14px;font-size:12px;font-weight:700;margin-bottom:12px}
 .sum.calm{background:var(--sc2);color:var(--ov)}
@@ -119,12 +142,13 @@ input[readonly]{background:var(--sc2);color:var(--ov);font-family:ui-monospace,M
 .ed-x{border:0;background:var(--sc2);color:var(--ov);border-radius:50%;width:22px;height:22px;cursor:pointer;display:grid;place-items:center;padding:0}
 .ed-x svg.ic{width:12px;height:12px;margin:0;vertical-align:0}
 .ed-x:hover{background:var(--sc3);color:var(--p)}
-.ed-seg{position:relative;display:flex;gap:0;background:var(--sc2);border-radius:999px;padding:3px;margin-bottom:10px;isolation:isolate}
+.ed-seg{position:relative;display:flex;gap:0;background:var(--sc2);border-radius:999px;padding:3px;margin-bottom:10px;isolation:isolate;box-shadow:inset 0 0 0 1px var(--olv)}
 .ed-ind{position:absolute;z-index:0;top:3px;left:3px;width:calc(50% - 3px);height:calc(100% - 6px);border-radius:999px;background:var(--p);box-shadow:var(--sh);transition:transform .34s cubic-bezier(.22,.61,.36,1)}
 .ed-opt{position:relative;z-index:1;flex:1;border:0;background:transparent;border-radius:999px;padding:7px 2px;font-size:10px;font-weight:700;color:var(--ov);cursor:pointer;white-space:nowrap;transition:color .26s ease}
 .ed-opt.on{color:#fff}
 .editor label{color:var(--ov);font-size:10px;margin:0 0 4px;font-weight:600}
-.editor input,.editor select{margin-bottom:8px;font-size:11px;padding:8px 10px;border-radius:10px}
+.editor input{margin-bottom:8px;font-size:11px;padding:8px 10px;border-radius:10px}
+.editor select{margin-bottom:8px;font-size:11px}
 .editor input:focus{border:2px solid var(--p);padding:7px 9px}
 .acts{display:flex;gap:6px;justify-content:flex-end;margin-top:8px}
 .acts .btn-f,.acts .btn-x{padding:7px 14px;font-size:11px}
@@ -138,10 +162,12 @@ input[readonly]{background:var(--sc2);color:var(--ov);font-family:ui-monospace,M
 .modal .acts{gap:8px}
 .btn-danger{background:var(--er);color:#fff;border:0;border-radius:999px;padding:9px 18px;font-size:12px;font-weight:700;cursor:pointer}
 svg.ic{width:1em;height:1em;display:inline-block;vertical-align:-.14em;flex:none}
-.mark svg.ic,.icon svg.ic{width:21px;height:21px;vertical-align:0}
-.mark svg.ic{width:23px;height:23px}
-.acct-btn svg.ic{width:13px;height:13px;vertical-align:0}
-.btn-f svg.ic,.btn-t svg.ic,.btn-x svg.ic,.bm svg.ic,.reply-trig svg.ic,.link-add svg.ic,.acct-add svg.ic,.acct-item .op svg.ic,.link-item .del svg.ic{width:13px;height:13px;margin-right:3px}
+.icon svg.ic{width:19px;height:19px;vertical-align:0;margin:0;flex:none}
+.mark svg.ic{width:23px;height:23px;vertical-align:0;margin:0;flex:none}
+.acct-btn svg.ic{width:13px;height:13px;vertical-align:0;margin:0;flex:none}
+/* 带图标的按钮统一 inline-flex 居中；用 gap 而非 margin-right，不再上下/左右偏移 */
+.btn-f,.btn-t,.btn-x,.bm,.reply-trig,.like-btn,.link-add,.acct-add,.acct-item .op,.link-item .del{display:inline-flex;align-items:center;justify-content:center;gap:5px}
+.btn-f svg.ic,.btn-t svg.ic,.btn-x svg.ic,.bm svg.ic,.reply-trig svg.ic,.like-btn svg.ic,.link-add svg.ic,.acct-add svg.ic,.acct-item .op svg.ic,.link-item .del svg.ic{width:13px;height:13px;margin:0;vertical-align:0;flex:none}
 .st svg.ic,.status svg.ic,.count svg.ic,.sum svg.ic,.since svg.ic{margin-right:4px}
 .sum svg.ic,.since svg.ic{width:12px;height:12px}
 .modal label{margin-top:10px}
@@ -170,7 +196,7 @@ svg.ic{width:1em;height:1em;display:inline-block;vertical-align:-.14em;flex:none
 .m-iframe{width:100%;height:210px;border:1px dashed var(--ol);border-radius:12px;background:#fff;display:block;margin-top:8px}
 .m-embed-row{display:flex;gap:6px;align-items:center;margin-top:8px;flex-wrap:wrap}
 .m-embed-row input{flex:1;min-width:100px;font-family:ui-monospace,Menlo,monospace;font-size:9.5px;padding:6px 8px;margin:0}
-#btnLogout{white-space:nowrap;font-size:11px;padding:7px 10px}
+#btnLogout{height:var(--ctl);padding:0 14px;box-sizing:border-box;display:inline-flex;align-items:center;white-space:nowrap;font-size:11px}
 .pill{max-width:92px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .acct-none{font-size:11px;color:var(--ov);padding:8px 4px;line-height:1.6}
 .embed-note{font-size:10.5px;line-height:1.6;color:var(--ov);flex:1;min-width:140px}
@@ -178,8 +204,186 @@ svg.ic{width:1em;height:1em;display:inline-block;vertical-align:-.14em;flex:none
 .embed-url input{flex:1;min-width:0;font-family:ui-monospace,Menlo,monospace;font-size:10.5px}
 .embed-warn b{color:var(--p)}
 .embed-warn code{font-family:ui-monospace,Menlo,monospace;font-size:10px;background:var(--sc2);border-radius:4px;padding:1px 4px}
+/* 正文里的链接标注：内联，和普通文字同一行、同字号，只多一个小图标+下划线 */
+.lk{color:var(--p);font-weight:600;text-decoration:underline;text-underline-offset:2px;text-decoration-thickness:1.5px;cursor:pointer;word-break:break-all}
+a.lk{color:var(--p)}
+.lk svg.ic{width:11px;height:11px;margin-right:2px;vertical-align:-.1em}
+/* 卡片操作区：回复 + 点赞并排 */
+.ops{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:10px}
+.ops .reply{margin-top:0}
+.like-wrap{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+.like-btn{border:0;background:var(--sc);color:var(--on-sc);border-radius:999px;padding:6px 14px;font-size:11px;font-weight:700;cursor:pointer}
+.like-btn:hover{background:var(--sc3)}
+.like-btn.on{background:var(--pc);color:var(--on-pc)}
+.like-btn.on svg.ic{transform:scale(1.06)}
+.like-btn:disabled{opacity:.5;cursor:not-allowed}
+/* 唯一一个轻弹窗：点赞结果只在这里闪一下，自动收起，不堆解释/请求体 */
+.toast{position:fixed;left:50%;bottom:calc(28px + env(safe-area-inset-bottom,0px));
+  z-index:120;display:flex;align-items:center;justify-content:center;gap:7px;max-width:min(86vw,420px);
+  background:#0f2418;color:#eaf6ee;border-radius:999px;padding:10px 18px;
+  font-size:12.5px;font-weight:700;line-height:1.5;white-space:normal;text-align:center;
+  box-shadow:0 8px 28px rgba(10,30,18,.28);
+  opacity:0;pointer-events:none;
+  transform:translate(-50%,12px);transition:opacity .22s ease,transform .22s ease}
+.toast.on{opacity:1;transform:translate(-50%,0)}
+.toast.fail{background:var(--er);color:#fff}
+.toast svg.ic{width:14px;height:14px;flex:none}
+/* 后台刷新设置弹窗（顶栏按钮已归入 .icon 统一尺寸） */
+.modal select{margin-bottom:10px}
+.poll-hint{font-size:10.5px;color:var(--ov);line-height:1.6;background:var(--sc2);border-radius:10px;padding:8px 10px;margin:0 0 8px}
+@media(max-width:420px){
+  :root{--ctl:34px}
+  .shell{padding:10px 12px calc(32px + env(safe-area-inset-bottom,0px))}
+  .ttl{font-size:17px}.sub{display:none}
+  .mark{width:var(--ctl);height:var(--ctl);border-radius:12px}
+  .bar{gap:6px}.bar-r{gap:5px}
+  .pill{max-width:64px;overflow:hidden;text-overflow:ellipsis}
+  .acct-btn{max-width:92px;padding:0 9px}
+  .acct-menu{right:0;width:min(252px,calc(100vw - 24px))}
+  .card{padding:14px;border-radius:18px}
+  .msg{gap:9px;padding:11px;border-radius:16px}
+  .av{width:34px;height:34px;font-size:14px}
+  .name{max-width:46%}.time{font-size:10px}.desc{font-size:13px}
+  .qr{flex-direction:column;align-items:stretch}
+  .qr-canvas{width:148px;height:148px;align-self:center}
+  .embed{height:360px}
+  .modal.wide{max-width:min(400px,calc(100vw - 40px))}
+  #btnLogout{padding:0 10px}
+  .ops{gap:6px}
+}
+@media(max-width:360px){
+  .bar-l{min-width:100%}.bar-r{width:100%}
+  .pill{max-width:88px}.acct-btn{max-width:88px}
+  .btn-f,.btn-t,.btn-x{padding:9px 16px}
+  .qr-canvas{width:130px;height:130px}
+}
+
+/* ---------- 回复独立悬浮窗 ---------- */
+.modal.wide.reply-modal{max-height:86vh;overflow-y:auto}
+.reply-modal .ed-head{margin-bottom:8px}
+.reply-modal .ed-title{font-size:14px;letter-spacing:0}
+.reply-modal .ta{min-height:92px}
+.reply-to{font-size:10.5px;color:var(--ov);background:var(--sc2);border-radius:10px;padding:7px 10px;margin-bottom:8px;line-height:1.5;word-break:break-all}
+.reply-modal .editor{padding:11px}
+/* 编辑器里的链接也要标注：左侧链接图标 + 主色文字 */
+.editor input.link-in{padding-left:34px;background-color:var(--sf);background-image:url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2024%2024'%3E%3Cpath%20d='M10%2013a5%205%200%200%200%207.5.5l3-3a5%205%200%200%200-7-7l-1.7%201.7M14%2011a5%205%200%200%200-7.5-.5l-3%203a5%205%200%200%200%207%207l1.7-1.7'%20fill='none'%20stroke='%231b6e43'%20stroke-width='2'%20stroke-linecap='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:9px center;background-size:18px 18px;color:var(--p);font-weight:600}
+.editor input.link-in::placeholder{color:var(--ov);font-weight:400}
+.editor input.link-in:focus{padding-left:33px}
+/* 输入框下方的实时效果预览：链接片段沿用卡片里的 .lk 标注 */
+.ed-preview{margin-top:6px;padding:8px 10px;background:var(--sc2);border:1px dashed var(--ol);border-radius:10px;font-size:11.5px;line-height:1.7;color:var(--on);word-break:break-word}
+.ed-preview::before{content:"效果预览 · ";font-size:10px;color:var(--ov);font-weight:700}
+.ed-preview .lk{pointer-events:none}
+/* 动态信息：可点，弹跳转确认 */
+.moment-jump{border:0;background:transparent;color:var(--p);font:inherit;font-weight:700;text-decoration:underline;text-underline-offset:2px;cursor:pointer;padding:0;display:inline-flex;align-items:center;gap:3px;vertical-align:baseline}
+.moment-jump:hover{color:#145a36}
+.moment-jump svg.ic{width:11px;height:11px;margin:0}
+
+/* ---------- MD3 动效（Material You）----------
+   进入：Emphasized Decelerate 400ms，fade 0→1 + scale .8→1 + 轻微上移
+   退出：Emphasized Accelerate 200ms（比进入快，符合 MD3 进入/退出不对称）
+   Scrim 淡入 220ms / 淡出 200ms；卡片入场递减 stagger；尊重 reduced-motion */
+:root{--md-enter:cubic-bezier(.05,.7,.1,1);--md-exit:cubic-bezier(.3,0,.8,.15)}
+.mask:not(.hidden){animation:md3ScrimIn 220ms var(--md-enter) both}
+.mask:not(.hidden)>.modal{animation:md3DialogIn 400ms var(--md-enter) both;transform-origin:center center;will-change:transform,opacity}
+@keyframes md3ScrimIn{from{opacity:0}to{opacity:1}}
+@keyframes md3DialogIn{0%{opacity:0;transform:translateY(16px) scale(.8)}100%{opacity:1;transform:none}}
+/* closing 写在后面，同特异性覆盖进入动画 */
+.mask.closing{animation:md3ScrimOut 200ms var(--md-exit) both}
+.mask.closing>.modal{animation:md3DialogOut 200ms var(--md-exit) both}
+@keyframes md3ScrimOut{from{opacity:1}to{opacity:0}}
+@keyframes md3DialogOut{from{opacity:1;transform:none}to{opacity:0;transform:translateY(8px) scale(.8)}}
+.msg{animation:md3ItemIn 280ms var(--md-enter) both}
+@keyframes md3ItemIn{from{opacity:0;transform:translateY(10px) scale(.985)}to{opacity:1;transform:none}}
+.toast{transition:opacity .28s var(--md-enter),transform .38s var(--md-enter)}
+/* 「上次读到 / 新增 N 条」提示 5 秒后收起，不再常驻 */
+.since{max-height:64px;overflow:hidden;transition:opacity .3s var(--md-exit),transform .3s var(--md-exit),max-height .36s var(--md-exit),padding .36s,margin .36s}
+.since.out{opacity:0;transform:translateY(-6px);max-height:0;padding-top:0;padding-bottom:0;margin-top:0;margin-bottom:0}
+.new-badge{display:inline-flex;align-items:center;background:var(--p);color:var(--on-p);border-radius:999px;padding:2px 9px;font-size:10px;font-weight:800;margin-left:8px;transition:opacity .3s var(--md-exit),transform .3s var(--md-exit)}
+.new-badge.out{opacity:0;transform:scale(.7)}
+@media(prefers-reduced-motion:reduce){
+ .mask:not(.hidden),.mask:not(.hidden)>.modal,.mask.closing,.mask.closing>.modal,.msg,.acct-menu,.toast,.since,.new-badge{animation:none!important;transition:none!important}
+}
+
+/* ---------- 图标「不在正中央」的根治 ----------
+   图标其实包在 <span data-ic> 里；span 是 inline 行盒，svg 按基线排会留 descender 空隙，
+   单改按钮的 flex 没用。让这个内层 span 自己变 inline-flex + line-height:0，
+   svg 改 block，图标在 span 内精确居中，span 再被外层按钮精确居中。 */
+[data-ic]{display:inline-flex;align-items:center;justify-content:center;line-height:0;vertical-align:middle}
+[data-ic]>svg.ic{display:block;margin:0;vertical-align:0;flex:none}
+/* ---------- MD3 点击涟漪（pressed state layer）----------
+   从触点扩散的半透明圆，用 currentColor，自动适配主色/ tonal / 文字按钮；
+   圆角按钮靠 overflow:hidden 裁成自身形状；450ms 扩散后淡出 */
+.btn-f,.btn-t,.btn-x,.btn-danger,.icon,.acct-btn,.acct-add,.reply-trig,.like-btn,.link-add,.bm,.acct-item,.acct-item .op,.ed-x,.md3-sel-trig{position:relative;overflow:hidden;isolation:isolate}
+/* 阶段 1：按下后 300ms 扩散到铺满，forwards 保持；长按期间一直停在这里，不会"播完闪没" */
+.md3-ripple{position:absolute;z-index:0;pointer-events:none;border-radius:50%;background:currentColor;transform:scale(0);transform-origin:center;animation:md3RippleIn 300ms var(--md-enter) forwards}
+@keyframes md3RippleIn{0%{transform:scale(0);opacity:.22}100%{transform:scale(1);opacity:.20}}
+/* 阶段 2：只有 pointerup / cancel 才加 release，220ms 淡出，之后移除节点 */
+.md3-ripple.release{animation:md3RippleOut 220ms var(--md-exit) forwards}
+@keyframes md3RippleOut{from{transform:scale(1);opacity:.20}to{transform:scale(1);opacity:0}}
+@media(prefers-reduced-motion:reduce){.md3-ripple{animation:none!important;display:none!important}}
+
+/* ---------- 后台刷新弹窗：和账户弹窗一套主题 ---------- */
+.poll-modal .poll-head{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+.poll-modal .poll-head-ic{width:32px;height:32px;flex:none;border-radius:11px;background:var(--pc);color:var(--p);display:inline-flex;align-items:center;justify-content:center}
+.poll-modal .poll-head-ic svg.ic{width:19px;height:19px;margin:0}
+.poll-modal .poll-head h3{font-size:17px;margin:0}
+.poll-modal label{display:flex;align-items:center;gap:7px;margin-top:12px}
+.poll-modal label .dot{width:6px;height:6px;flex:none;border-radius:50%;background:var(--p)}
+.poll-modal .poll-field{position:relative;margin-bottom:2px}
+.poll-modal .poll-field .pf-ic{position:absolute;left:13px;top:50%;transform:translateY(-50%);z-index:1;color:var(--p);pointer-events:none}
+.poll-modal .poll-field .pf-ic svg.ic{width:16px;height:16px;margin:0;display:block}
+.poll-modal .poll-field select,.poll-modal .poll-field input{padding-left:39px;margin-bottom:0}
+.poll-modal .poll-field select:focus,.poll-modal .poll-field input:focus{padding-left:38px}
+.poll-modal .poll-field input{padding-right:42px}
+.poll-modal .pf-unit{position:absolute;right:14px;top:50%;transform:translateY(-50%);font-size:11px;font-weight:700;color:var(--ov);pointer-events:none}
+.poll-modal .poll-hint{border-left:3px solid var(--p);background:var(--sc2);border-radius:4px 10px 10px 4px;padding:9px 12px;margin:12px 0 6px}
+.poll-modal .poll-hint b{color:var(--p)}
+.poll-modal .acts{margin-top:14px}
+
+/* ---------- 自定义下拉：替换原生 option 弹层（系统渲染，无法主题化）---------- */
+.md3-sel{position:relative;z-index:2}
+.md3-sel>select{position:absolute;left:0;top:0;width:1px;height:1px;opacity:0;pointer-events:none;appearance:none;border:0;padding:0}
+.md3-sel-trig{width:100%;display:flex;align-items:center;justify-content:space-between;gap:8px;
+ background:var(--scl);border:1px solid var(--ol);border-radius:14px;min-height:40px;
+ padding:9px 13px 9px 39px;color:var(--on-pc);font-size:12px;font-weight:600;font-family:inherit;
+ text-align:left;cursor:pointer;transition:border-color .2s,background-color .2s,box-shadow .2s}
+.md3-sel-trig:hover{background:var(--sc2);border-color:var(--p)}
+.md3-sel-trig:focus-visible{outline:none;border:2px solid var(--p);padding:8px 12px 8px 38px;box-shadow:0 0 0 3px rgba(27,110,67,.13)}
+.md3-sel-trig .ms-label{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.md3-sel-trig .ms-chev{display:inline-flex;line-height:0;flex:none;color:var(--p)}
+.md3-sel-trig .ms-chev svg.ic{display:block;width:16px;height:16px;margin:0}
+.md3-sel-menu{position:absolute;left:0;right:0;top:calc(100% + 6px);z-index:30;
+ background:var(--sf);border:1px solid var(--olv);border-radius:16px;padding:6px;
+ box-shadow:0 12px 34px rgba(15,45,25,.18);transform-origin:top center;
+ animation:md3MenuIn 200ms var(--md-enter) both}
+@keyframes md3MenuIn{from{opacity:0;transform:translateY(-8px) scale(.96)}to{opacity:1;transform:none}}
+.md3-sel-item{width:100%;display:flex;align-items:center;justify-content:space-between;gap:8px;
+ border:0;background:transparent;border-radius:12px;padding:10px 12px;
+ font-size:12px;font-weight:600;color:var(--on);font-family:inherit;cursor:pointer;text-align:left}
+.md3-sel-item:hover{background:var(--sc2)}
+.md3-sel-item.on{background:var(--pc);color:var(--on-pc)}
+.md3-sel-item .ms-check{display:inline-flex;line-height:0;opacity:0;flex:none}
+.md3-sel-item.on .ms-check{opacity:1}
+/* ---------- 插入链接编辑器：展开/收起不再是瞬间 display:none ---------- */
+.editor{overflow:hidden}
+.editor.md3-ed-in{animation:md3EdIn 280ms var(--md-enter) both}
+.editor.md3-ed-out{animation:md3EdOut 220ms var(--md-exit) both;pointer-events:none}
+@keyframes md3EdIn{0%{opacity:0;max-height:0;padding-top:0;padding-bottom:0;transform:translateY(-8px) scale(.98)}100%{opacity:1;max-height:560px;transform:none}}
+@keyframes md3EdOut{0%{opacity:1;max-height:560px;transform:none}100%{opacity:0;max-height:0;padding-top:0;padding-bottom:0;transform:translateY(-6px) scale(.98)}}
+/* ---------- 点赞状态切换：只动图标与文字，不做整块淡入淡出 ---------- */
+.like-btn{transition:background-color .14s linear,color .14s linear}
+.like-btn .lb-ic{display:inline-flex;align-items:center;justify-content:center;line-height:0;flex:none}
+.like-btn .lb-ic>svg.ic{display:block;margin:0}
+.like-btn .lb-tx{display:inline-block;white-space:nowrap}
+.like-btn .lb-ic.pop{animation:md3LikePop 340ms var(--md-enter) both}
+@keyframes md3LikePop{0%{transform:scale(.62) rotate(-14deg);opacity:.3}55%{transform:scale(1.2) rotate(5deg);opacity:1}100%{transform:scale(1) rotate(0);opacity:1}}
+.like-btn .lb-tx.swap{animation:md3LikeText 260ms var(--md-enter) both}
+@keyframes md3LikeText{0%{opacity:0;transform:translateY(5px)}100%{opacity:1;transform:none}}
+@media(prefers-reduced-motion:reduce){
+ .md3-sel-menu,.editor.md3-ed-in,.editor.md3-ed-out,.like-btn .lb-ic.pop,.like-btn .lb-tx.swap{animation:none!important}
+ .like-btn{transition:none!important}
+}
 .hidden,[hidden]{display:none!important}
-@media(max-width:420px){.shell{padding:10px 12px 32px}.qr-canvas{width:130px;height:130px}.pill{max-width:64px;overflow:hidden;text-overflow:ellipsis}.embed{height:360px}.acct-menu{right:-46px;width:236px}.bar-r{gap:5px}.acct-btn{max-width:92px;padding:7px 9px}#btnLogout{padding:6px 8px;font-size:10.5px}}
 </style>
 <script>
 /* QR Code generator — compact byte-mode core (EC=M), based on Kazuhiko Arase's qrcode-generator, MIT License. SVG only, no CDN. */
@@ -231,7 +435,7 @@ return{svg}})();
       <div class="acct-wrap"><button class="acct-btn" id="btnAcct" title="切换已保存的账户"><span data-ic="user"></span><span class="n" id="acctName">账户</span><span data-ic="chev"></span></button>
         <div class="acct-menu hidden" id="acctMenu"><h4>已保存账户 · 点一下即换 rt</h4><div id="acctList"></div><button class="acct-add" id="btnAddAcct"><span data-ic="plus"></span>添加新账户（输入 rt）</button></div>
       </div>
-      <span class="pill" id="status">未登录</span><button class="icon" id="btnRefresh" title="刷新"><span data-ic="refresh"></span></button><button class="btn-t hidden" id="btnLogout">退出账户</button>
+      <span class="pill" id="status">未登录</span><button class="icon" id="btnPollCfg" title="后台刷新设置"><span data-ic="clock"></span></button><button class="icon" id="btnRefresh" title="刷新"><span data-ic="refresh"></span></button><button class="btn-t hidden" id="btnLogout">退出账户</button>
     </div>
   </header>
 
@@ -275,11 +479,12 @@ return{svg}})();
     <p class="st" id="bridgeSt"></p>
   </section>
 
-  <nav class="tabs" id="tabsSec"><span class="tab-ind" id="tabInd"></span><button class="tab on" data-tab="moment" aria-selected="true">社区互动</button><button class="tab" data-tab="inapp" aria-selected="false">站内推送</button></nav>
-  <div class="viewport"><div class="track" id="tabTrack">
-    <section class="pane"><div class="list" id="momentBody" aria-hidden="false"><div class="empty">登录成功后点右上角刷新<br>加载社区与站内消息</div></div></section>
-    <section class="pane"><div class="list" id="inappBody" aria-hidden="true"></div></section>
-  </div></div>
+  <main class="list" id="momentBody"><div class="empty">登录成功后点右上角刷新<br>加载社区互动消息</div></main>
+</div>
+
+<div class="mask hidden" id="jumpMask">
+  <div class="modal" role="dialog" aria-modal="true"><h3>跳转到动态</h3><p>是否跳转到该动态，此页面可能丢失</p>
+  <div class="acts"><button class="btn-x" id="jumpCancel">取消</button><button class="btn-f" id="jumpOk">确定</button></div></div>
 </div>
 
 <div class="mask hidden" id="logoutMask">
@@ -345,12 +550,29 @@ return{svg}})();
   </div>
 </div>
 
+<div class="mask hidden" id="pollMask">
+  <div class="modal poll-modal" role="dialog" aria-modal="true">
+    <div class="poll-head"><span class="poll-head-ic" data-ic="clock"></span><h3>后台刷新</h3></div>
+    <p>自动模式在后台静默检查：<b>只有出现新消息</b>才更新列表并轻弹一下；没有新消息时界面完全不动，不会反复闪「拉取中」。手动模式只在你点右上角刷新时才拉取。</p>
+    <label><i class="dot"></i>刷新方式</label>
+    <div class="poll-field"><span class="pf-ic" data-ic="refresh"></span><select id="pollMode"><option value="auto">自动后台刷新</option><option value="manual">手动刷新</option></select></div>
+    <label><i class="dot"></i>检查间隔</label>
+    <div class="poll-field"><span class="pf-ic" data-ic="clock"></span><input id="pollSec" type="number" min="1" max="3600" step="1" value="1"><span class="pf-unit">秒</span></div>
+    <p class="poll-hint">默认 <b>1 秒</b>，可设 1–3600。每轮同时同步动态/评论的真实点赞状态（含 App 里点的赞）。间隔越短请求越密，遇到限流可调大一些；改完立即生效。</p>
+    <div class="acts"><button class="btn-x" id="pollCancel">取消</button><button class="btn-f" id="pollSave">保存</button></div>
+  </div>
+</div>
+
 <script>
 (()=>{"use strict";
 /* ---------- 全部图形符号用内联 SVG，不用 emoji ---------- */
 const P=d=>`<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${d}</svg>`;
+/* 实心版：同一组路径，靠 fill 填充，切换时形状不跳变 */
+const PF=d=>`<svg class="ic" viewBox="0 0 24 24" fill="currentColor" stroke="none" aria-hidden="true">${d}</svg>`;
+const THUMB='<path d="M7 10v11H4a1 1 0 0 1-1-1v-9a1 1 0 0 1 1-1h3z"/><path d="M7 10l4-7a2 2 0 0 1 2 2v4h5a2 2 0 0 1 2 2.4l-1.4 7A2 2 0 0 1 16.6 20H7"/>';
 const ICONS={
- mark:P('<path d="M12 2v20M2 12h20M5 5l14 14M19 5L5 19"/>'),
+ /* 消息中心 = 收件箱（原来的米字星太抽象） */
+ mark:P('<path d="M3 6h5l1.7 2.2h4.6L16 6h5v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6z"/><path d="M3 13h4.6a3 3 0 0 0 2.8 2h3.2a3 3 0 0 0 2.8-2H21"/>'),
  refresh:P('<path d="M20 11a8 8 0 1 0-2.3 5.7"/><path d="M20 4v7h-7"/>'),
  user:P('<circle cx="12" cy="8" r="3.6"/><path d="M4.5 20a7.5 7.5 0 0 1 15 0"/>'),
  chev:P('<path d="M6 9l6 6 6-6"/>'),
@@ -365,10 +587,49 @@ const ICONS={
  check:P('<path d="M4 12.5l5 5L20 6.5"/>'),
  circle:P('<circle cx="12" cy="12" r="8"/>'),
  up:P('<path d="M12 19V5M6 11l6-6 6 6"/>'),
- frame:P('<rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 9h18"/>')
+ frame:P('<rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 9h18"/>'),
+ link:P('<path d="M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.7 1.7"/><path d="M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l1.7-1.7"/>'),
+ thumb:P(THUMB),thumbOn:PF(THUMB)
 };
 const IC=k=>ICONS[k]||"";
 document.querySelectorAll("[data-ic]").forEach(e=>{e.innerHTML=IC(e.dataset.ic)});
+/* ---------- MD3 点击涟漪：全局委托，动态生成的按钮也自动生效 ---------- */
+/* 滑块（带滑动指示器的 tab / 分段控件）不参与涟漪 */
+const RIPPLE_SEL='.btn-f,.btn-t,.btn-x,.btn-danger,.icon,.acct-btn,.acct-add,.reply-trig,.like-btn,.link-add,.bm,.acct-item,.acct-item .op,.ed-x,.md3-sel-trig';
+const RIPPLE_ACTIVE=new Map();                 /* pointerId → 当前按住的涟漪 */
+function releaseRipple(rec){
+ if(!rec||rec.released)return;
+ rec.released=true;
+ /* 快速点击也至少等扩散铺满（300ms）才淡出；长按则一直保持铺满直到抬起 */
+ const wait=Math.max(0,300-(Date.now()-rec.t0));
+ rec.relT=setTimeout(()=>{rec.sp.classList.add("release");
+  rec.killT=setTimeout(rec.kill,320)},wait);
+}
+function md3Ripple(e){
+ const t=e.target,el=t&&t.closest?t.closest(RIPPLE_SEL):null;
+ if(!el||el.disabled||el.classList.contains("hidden"))return;
+ try{if(window.matchMedia&&window.matchMedia("(prefers-reduced-motion: reduce)").matches)return}catch{}
+ const r=el.getBoundingClientRect();if(!r.width||!r.height)return;
+ /* 鼠标/触摸用触点；键盘触发没有坐标就回退到按钮中心 */
+ const px=e.clientX!=null?e.clientX:r.left+r.width/2,py=e.clientY!=null?e.clientY:r.top+r.height/2;
+ const x=px-r.left,y=py-r.top;
+ const rad=Math.hypot(Math.max(x,r.width-x),Math.max(y,r.height-y));
+ const sp=document.createElement("span");sp.className="md3-ripple";
+ sp.style.left=(x-rad)+"px";sp.style.top=(y-rad)+"px";sp.style.width=sp.style.height=(rad*2)+"px";
+ const rec={sp,el,t0:Date.now(),released:false,kill:()=>{if(sp.parentNode)sp.remove()}};
+ /* 进入动画结束不删节点，只有淡出动画结束才删 —— 长按不再"播完闪没" */
+ sp.addEventListener("animationend",ev=>{if(ev.animationName==="md3RippleIn")return;rec.kill()});
+ el.appendChild(sp);
+ const pid=e.pointerId!=null?e.pointerId:"kbd";
+ if(RIPPLE_ACTIVE.has(pid))releaseRipple(RIPPLE_ACTIVE.get(pid));
+ RIPPLE_ACTIVE.set(pid,rec);
+ if(e.pointerId==null)releaseRipple(rec);        /* 键盘/合成事件：自动抬起 */
+}
+const endRipple=e=>{const rec=RIPPLE_ACTIVE.get(e.pointerId);if(rec){releaseRipple(rec);RIPPLE_ACTIVE.delete(e.pointerId)}};
+document.addEventListener("pointerdown",md3Ripple,true);
+document.addEventListener("pointerup",endRipple,true);
+document.addEventListener("pointercancel",endRipple,true);
+window.addEventListener("blur",()=>{for(const[,rec]of RIPPLE_ACTIVE)releaseRipple(rec);RIPPLE_ACTIVE.clear()});
 const autoIco=t=>t==="ok"?"check":(t==="err"||t==="fail")?"alert":t==="wait"?"clock":"";
 /* 底层/英文报错一律换成中文短句；凭证、格式类统一为「请重新登录」 */
 function friendly(m){const s=String(m||"").trim();if(!s)return "操作失败，请稍后重试";
@@ -383,10 +644,11 @@ return s.length>160?s.slice(0,160)+"…":s}
 function line(el,text,tone,ico,base){const t=(tone==="err"||tone==="fail")?friendly(text):text;el.className=(base||"st")+(tone?" "+tone:"");el.innerHTML=(ico?IC(ico):"")+"<span>"+esc(t)+"</span>"}
 const A="https://auth.kimi.com/api",B="https://www.kimi.com/apiv2",PAGE=50,KEY="kimi_msg_panel",ACC="kimi_accounts",RKEY="kimi_msg_last_read",TTL=5*60*1000;
 const U={refresh:A+"/account.gateway.v1.AuthService/RefreshToken",createQr:A+"/account.gateway.v1.AuthService/CreateLoginQRCode",qrStatus:A+"/account.gateway.v1.AuthService/GetLoginQRCodeStatus",logout:A+"/account.gateway.v1.AuthService/Logout",
-notif:B+"/moment.v1.NotificationService/ListNotification",profile:B+"/moment.v1.UserService/GetUserProfile",inapp:B+"/kimi.gateway.notification.v1.NotificationService/ListUserNotifications",cmt:B+"/moment.v1.CommentService/CreateComment"};
+notif:B+"/moment.v1.NotificationService/ListNotification",profile:B+"/moment.v1.UserService/GetUserProfile",cmt:B+"/moment.v1.CommentService/CreateComment",
+/* 点赞（文档确认）：VoteComment / VoteMoment，请求体只有 id + voteAction */
+voteCmt:B+"/moment.v1.CommentService/VoteComment",voteMoment:B+"/moment.v1.MomentService/VoteMoment"};
 const TM={NOTIFICATION_TYPE_FAVORITE:"收藏",NOTIFICATION_TYPE_FOLLOW:"关注",NOTIFICATION_TYPE_REPLY_COMMENT:"回复评论",NOTIFICATION_TYPE_UP_COMMENT:"赞了评论",NOTIFICATION_TYPE_UP_MOMENT:"赞了动态",NOTIFICATION_TYPE_COMMENT_MOMENT:"评论动态",NOTIFICATION_TYPE_UNSPECIFIED:"通知",0:"通知",1:"收藏",2:"关注",3:"回复评论",4:"赞了评论",5:"赞了动态",6:"评论动态"};
-const IM={NOTIFICATION_TYPE_MY_KIMI:"我的 Kimi",NOTIFICATION_TYPE_TASK:"任务",NOTIFICATION_TYPE_SKILL:"技能",NOTIFICATION_TYPE_ACTIVITY:"活动",NOTIFICATION_TYPE_OPERATIONAL:"运营",NOTIFICATION_TYPE_CHAT_STATUS_CHANGED:"聊天状态",NOTIFICATION_TYPE_UNSPECIFIED:"通知"};
-const REPLYABLE=new Set(["回复评论","评论动态"]),ALT=new Set(["任务","活动","技能","聊天状态"]);
+const REPLYABLE=new Set(["回复评论","评论动态"]);
 let at="",aexp=0,rf="",did="",sid="",activeId="",rtimer=null,rpromise=null,dgen=0,bridgeTarget="panel";
 const $=i=>document.getElementById(i);
 /* ---------- 多账户：每个账户存自己的 rt，切换就是换 rt ---------- */
@@ -417,7 +679,7 @@ function keep(t){at=t;aexp=jexp(t);save()}
 function head(){return{"Content-Type":"application/json",Accept:"application/json","X-Language":"zh-CN","x-msh-platform":"web","x-msh-version":"3.1.0","R-Timezone":"Asia/Shanghai",...(did?{"x-msh-device-id":did}:{}),...(sid?{"x-msh-session-id":sid}:{})}}
 async function req(url,body,useToken){const h=head();if(/RefreshToken|Logout$/.test(url))h["connect-protocol-version"]="1";if(useToken)h.Authorization="Bearer "+await ensure();
 const r=await fetch(url,{method:"POST",headers:h,body:JSON.stringify(body||{})});const t=await r.text();let j=null;try{j=t?JSON.parse(t):null}catch{}
-if(!r.ok){const raw=j?.details?.[0]?.debug?.localizedMessage?.message||j?.message||j?.code||`HTTP ${r.status} ${t.slice(0,120)}`;const e=new Error(friendly(raw));e.body=j??t.slice(0,300);throw e}return j??{raw:t}}
+if(!r.ok){const raw=j?.details?.[0]?.debug?.localizedMessage?.message||j?.message||j?.code||`HTTP ${r.status} ${t.slice(0,120)}`;const e=new Error(friendly(raw));e.status=r.status;e.body=j??t.slice(0,600);e.rawText=t.slice(0,600);throw e}return j??{raw:t}}
 function pick(d,ks){if(!d||typeof d!=="object")return"";for(const k of ks)if(typeof d[k]==="string"&&d[k])return d[k];for(const k of Object.keys(d)){const v=d[k];if(v&&typeof v==="object")for(const kk of ks)if(typeof v[kk]==="string"&&v[kk])return v[kk]}return""}
 function refresh(){if(rpromise)return rpromise;rpromise=(async()=>{if(!rf)throw Error("没有 refresh_token");const d=await req(U.refresh,{refresh_token:rf},false);const nw=pick(d,["refreshToken","refresh_token"]);if(nw)rf=nw;const t=pick(d,["accessToken","access_token","token"]);if(!t)throw Error("刷新成功但未取到 accessToken");keep(t);return t})().finally(()=>rpromise=null);return rpromise}
 function ensure(){return at&&aexp&&Date.now()/1000<aexp-120?Promise.resolve(at):refresh()}
@@ -430,104 +692,392 @@ const cut=(s,n)=>{const t=typeof s==="object"?JSON.stringify(s):String(s??"");re
 function stamp(v){if(v==null||v===""||v==="—")return 0;if(typeof v==="object"){if(v.seconds!=null)return Number(v.seconds)*1000;if(v.$date)return stamp(v.$date);return 0}if(typeof v==="number")return v<1e12?v*1000:v;let s=String(v).trim();if(/^\d+$/.test(s)){const n=Number(s);return n<1e12?n*1000:n}s=s.replace(" ","T");if(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(:\d{2})?$/.test(s))s+="+08:00";const t=Date.parse(s);return isNaN(t)?0:t}
 function rel(v){const t=stamp(v);if(!t)return"";const d=Date.now()-t;if(d<6e4)return"刚刚";const mi=Math.floor(d/6e4),h=Math.floor(d/36e5);if(mi<60)return mi+" 分钟前";if(h<24)return h+" 小时前";if(h<48)return"昨天";if(h<168)return Math.floor(h/24)+" 天前";if(h<720)return Math.floor(h/24/7)+" 周前";const z=new Date(t),now=new Date();return z.getFullYear()===now.getFullYear()?`${z.getMonth()+1}月${z.getDate()}日`:`${z.getFullYear()}/${z.getMonth()+1}/${z.getDate()}`}
 function abs(v){const t=stamp(v);if(!t)return"时间未知";const z=new Date(t);const p=n=>String(n).padStart(2,"0");return`${z.getMonth()+1}月${z.getDate()}日 ${p(z.getHours())}:${p(z.getMinutes())}`}
-function av(u){if(!u||typeof u!=="object")return"";const p=x=>{if(!x)return"";if(typeof x==="string")return x;const v=x.url||x.thumbnailUrl||x.originUrl||"";return v.startsWith("//")?"https:"+v:v};let s="";for(const k of["avatarUrl","avatar","avatarImage","image"])if(!s&&u[k])s=p(u[k]);if(!s&&u.userBase?.avatarImage)s=p(u.userBase.avatarImage);if(!s&&u.userInfo?.userBase?.avatarImage)s=p(u.userInfo.userBase.avatarImage);return s}
-const nm=u=>u?(typeof u==="string"?u:u.name||u.nickname||u.userId||""):"";
-const uid=u=>u?(typeof u==="string"?u:u.userId||u.id||""):"";
+/* 用户对象在不同账户/接口里层级与字段名不一致：统一做多字段 + 多层级识别。
+   nm 不再拿 userId 当名字（那正是「名称变一长串 id」的来源）。 */
+const U_NEST=["userBase","user","userInfo","profile","userMiniInfo","userProfile","base"];
+const U_NAME=["name","nickname","nickName","displayName","userName","screenName","realName","user_name"];
+const U_ID=["userId","user_id","userID","uid","id"];
+const U_AV=["avatarUrl","avatar","avatarImage","image","avatarImg","headUrl","profileImage","icon"];
+function av(u){if(!u||typeof u!=="object")return"";
+const p=x=>{if(!x)return"";if(typeof x==="string")return x.startsWith("//")?"https:"+x:x;
+const v=x.url||x.thumbnailUrl||x.originUrl||x.imageUrl||"";return typeof v==="string"&&v?(v.startsWith("//")?"https:"+v:v):""};
+let out="";for(const k of U_AV)if(!out&&u[k])out=p(u[k]);
+if(!out)for(const k of U_NEST){const v=u[k];if(v&&typeof v==="object"){out=av(v);if(out)break}}
+return out}
+function nm(u){if(!u)return"";if(typeof u==="string")return u;
+for(const k of U_NAME)if(typeof u[k]==="string"&&u[k].trim())return u[k];
+for(const k of U_NEST){const v=u[k];if(v&&typeof v==="object"){const z=nm(v);if(z)return z}}
+return""}
+function uid(u){if(!u)return"";if(typeof u==="string")return String(u);
+for(const k of U_ID)if(u[k]!=null&&u[k]!=="")return String(u[k]);
+for(const k of U_NEST){const v=u[k];if(v&&typeof v==="object"){const z=uid(v);if(z)return z}}
+return""}
+/* GetUserProfile 响应归一化：展开一层嵌套，并把请求的 id 补进 userId，
+   保证 uid(user)===id 一定能匹配上，否则每轮都会判定「缺失」反复打接口 */
+function pickUser(x,id){if(!x||typeof x!=="object")return null;
+let c=x;for(const k of U_NEST)if(x[k]&&typeof x[k]==="object"){c=x[k];break}
+const u=Object.assign({},c);
+for(const k of [...U_AV,...U_NAME,...U_ID])if(u[k]==null&&x[k]!=null)u[k]=x[k];
+const got=uid(u)||uid(x)||String(id||"");if(got)u.userId=got;return u}
+function fallbackName(id){const z=String(id||"").trim();return z?"Kimi 用户 · "+z.slice(-4):"有人"}
 function avatarHtml(u){const url=av(u),n=(nm(u)||"K").slice(0,1).toUpperCase();return`<div class="av${u?"":" sys"}">${url?`<img src="${esa(url)}" referrerpolicy="no-referrer" alt="">`:""}<span>${esc(n)}</span></div>`}
 /* ---------- 数据（不再取任何未读状态） ---------- */
 const momentTitles=new Map();
 function indexMoments(d){for(const m of d?.moments||[]){const id=String(m.id??m.momentId??"");if(!id)continue;const t=String(m.content?.text||m.text||m.title||m.content?.title||"").trim();if(t)momentTitles.set(id,t)}}
 function momentTitle(id){return id?momentTitles.get(String(id))||"":""}
+/* 资料缓存按账户隔离；失败也缓存 null，避免 1 秒轮询反复打 GetUserProfile 被限流 */
+const PROFILE=new Map();let profileAcc="";
+const profileKey=id=>(activeId||"default")+":"+String(id);
+function profileReset(){PROFILE.clear();profileAcc=activeId||"default"}
 async function loadMoment(){const d={notifications:[],moments:[],comments:[],users:[],errors:[]};
-try{const r=await api(U.notif,{limit:PAGE});d.notifications=r.notifications||[];d.moments=r.moments||[];d.comments=r.comments||[];d.users=r.users||[]}catch(e){d.errors.push("社区通知 → "+friendly(e.message))}
-const miss=new Set();for(const n of d.notifications)for(const f of n.fromUsers||[]){const id=typeof f==="object"?uid(f):f;if(id&&!d.users?.some(u=>uid(u)===id))miss.add(id)}
-if(miss.size&&miss.size<=15){const ex=await Promise.all([...miss].map(async id=>{try{const r=await api(U.profile,{userId:id});return r.userBase||r}catch{return null}}));d.users=[...(d.users||[]),...ex.filter(Boolean)]}
+if(profileAcc!==(activeId||"default"))profileReset();
+try{const r=await api(U.notif,{limit:PAGE});d.notifications=r.notifications||[];d.moments=r.moments||[];d.comments=r.comments||[];d.users=r.users||[];applyTruth(d)}catch(e){d.errors.push("社区通知 → "+friendly(e.message))}
+/* 先把响应里的 users 归一化，避免嵌套结构取不到 id 被误判成缺失 */
+d.users=(d.users||[]).map(x=>pickUser(x)).filter(Boolean);
+const known=new Set(d.users.map(uid).filter(Boolean));
+const miss=new Set();
+for(const n of d.notifications)for(const f of n.fromUsers||[]){
+const id=uid(f)||(typeof f==="string"?String(f):"");if(!id||known.has(id))continue;
+const k=profileKey(id);
+if(PROFILE.has(k)){const v=PROFILE.get(k);if(v){d.users.push(v);known.add(id)}}
+else miss.add(id)}
+if(miss.size){const ids=[...miss].slice(0,60);       /* 不再卡死 15 条上限 */
+for(let i=0;i<ids.length;i+=8){                    /* 分批，避免一次并发打爆 */
+const batch=ids.slice(i,i+8);
+const rs=await Promise.all(batch.map(async id=>{const k=profileKey(id);
+try{const r=await api(U.profile,{userId:id});const u=pickUser(r,id)||{userId:String(id)};
+PROFILE.set(k,u);known.add(id);return u}
+catch{PROFILE.set(k,null);return null}}));
+d.users.push(...rs.filter(Boolean))}}
 return d}
-async function loadInapp(){const d={items:[],errors:[]};try{const r=await api(U.inapp,{pageSize:PAGE});d.items=r.userNotifications||[]}catch(e){d.errors.push("站内 → "+friendly(e.message))}return d}
+/* ---------- 真实点赞状态（服务端权威） ----------
+   ListNotification 响应自带 moments[] / comments[]：
+     Moment.interactionStatus.isLiked、Comment.interactionStatus.isLiked，
+     另有顶层 CommentCard.isLiked。proto3 JSON 会省略 false：
+     interactionStatus 对象在但 isLiked 缺失 → 视为未赞；整个状态字段都没有 → 不覆盖本地值。
+   每轮 1 秒后台刷新都会重读一次，App 里点的赞会同步过来。 */
+const voteTruth=new Map();
+const voteBtns=new Map();                        // key -> Set<paint>，同动态多卡片共用
+function readLiked(x){if(!x||typeof x!=="object")return null;
+if(typeof x.isLiked==="boolean")return x.isLiked;
+const st=x.interactionStatus??x.interaction??null;
+if(st&&typeof st==="object")return typeof st.isLiked==="boolean"?st.isLiked:false;
+for(const v of [x.liked,x.stat?.isLiked,x.voteStatus?.isLiked])if(typeof v==="boolean")return v;
+return null}
+function applyTruth(d){
+for(const m of d?.moments||[]){const id=String(m.id??m.momentId??"");if(!id)continue;
+const v=readLiked(m);if(v!==null)voteTruth.set("m:"+id,v)}
+for(const c of d?.comments||[]){const id=String(c.id??c.commentId??"");if(!id)continue;
+const v=readLiked(c);if(v!==null)voteTruth.set("c:"+id,v)}
+}
+function regVote(k,paint){if(!voteBtns.has(k))voteBtns.set(k,new Set());voteBtns.get(k).add(paint)}
+/* 只刷新按钮外观，不重绘列表、不动滚动位置；顺手清掉已移除的 DOM 节点 */
+function syncAllVotes(){for(const [k,fns] of voteBtns){for(const f of [...fns]){
+const n=f.__btn;if(n&&n.isConnected===false){fns.delete(f);continue}try{f()}catch{}}
+if(!fns.size)voteBtns.delete(k)}}
+/* 从动态/评论/通知里兜底取 links（不同接口字段名可能不同） */
+function pickLinks(x){if(!x||typeof x!=="object")return[];
+for(const k of ["links","linkList"]){const v=x[k];if(Array.isArray(v)&&v.length)return v}
+for(const k of ["content","momentContent","commentContent","card","commentCard","comment","moment"]){const v=x[k];
+if(v&&typeof v==="object"){if(Array.isArray(v.links)&&v.links.length)return v.links;if(Array.isArray(v.linkList)&&v.linkList.length)return v.linkList}}
+return[]}
+/* 把 content.text 按 links[].offset/length 切成内联富文本。
+   offset/length 按 Unicode 字符（code point）计 —— 抓包里 🔗 算 1 个，offset=9/length=5 不偏。
+   链接段用 displayText 显示（App 里「时空跃动」就是它），前面挂一个小链接图标 + 下划线作标注，
+   其余部分原样是普通文字，全部排在同一行里，不另起一块。 */
+function rich(text,links){
+const cps=Array.from(String(text??""));
+if(!Array.isArray(links)||!links.length)return esc(cps.join(""));
+const sorted=[...links].map(l=>({s:Number(l.offset)||0,n:Number(l.length)||0,l})).filter(x=>x.n>0).sort((a,b)=>a.s-b.s);
+let out="",at=0;
+for(const {s,n,l} of sorted){
+if(s<at||s>=cps.length)continue;
+const end=Math.min(s+n,cps.length);
+out+=esc(cps.slice(at,s).join(""));
+const anchor=cps.slice(s,end).join("");
+const label=String(l.displayText||l.text||anchor||"链接");
+const href=l.url||(l.id?"https://www.kimi.com/moment/"+encodeURIComponent(l.id):"");
+const tip=["锚文字："+anchor,"显示："+label,l.id&&"目标 #"+l.id,l.url&&l.url].filter(Boolean).join(" · ");
+const inner=IC("link")+esc(label);
+out+=href?`<a class="lk" href="${esa(href)}" target="_blank" rel="noopener noreferrer" title="${esa(tip)}">${inner}</a>`
+         :`<span class="lk" title="${esa(tip)}">${inner}</span>`;
+at=end}
+out+=esc(cps.slice(at).join(""));return out}
+
+/* 服务端偶尔把 name 直接填成 userId（或「用户+id」），一律降级成短占位 */
+function cleanName(s,id){const t=String(s||"").trim();if(!t)return"";
+const z=String(id||"");return (z&&t.includes(z))?fallbackName(z):t}
 function describe(n,users,comments,moments){const tl=TM[n.notificationType??n.type]??String(n.notificationType??n.type??"通知");let a={name:"",uid:""};const f=Array.isArray(n.fromUsers)?n.fromUsers[0]:null;
-if(f){if(typeof f==="object"&&f){a={name:nm(f),uid:uid(f),u:f};const m=users?.find(u=>uid(u)===uid(f));if(m){a.name=nm(m)||a.name;a.u=m}}else{const m=users?.find(u=>uid(u)===f);a=m?{name:nm(m),uid:uid(m),u:m}:{name:String(f),uid:String(f)}}}
+if(f){if(typeof f==="object"&&f){const fid=uid(f);a={name:cleanName(nm(f),fid),uid:fid,u:f};
+const m=fid?users?.find(u=>uid(u)===fid):null;
+if(m){a.name=cleanName(nm(m),fid)||a.name||fallbackName(fid);
+/* 补拉到的资料没头像时，别把 fromUsers 自带的头像冲掉 */
+a.u=av(m)?m:(av(a.u)?a.u:m)}
+else if(!a.name)a.name=fallbackName(fid)}
+else{const id=String(f),m=users?.find(u=>uid(u)===id);
+a=m?{name:cleanName(nm(m),id)||fallbackName(id),uid:id,u:m}:{name:fallbackName(id),uid:id,u:null}}}
 if(!a.name)a.name="有人";
-let mt="",ct="";if(n.momentId&&moments?.length){const m=moments.find(x=>x.id===n.momentId||x.momentId===n.momentId);if(m)mt=m.content?.text||m.text||m.title||""}
-if(n.commentId&&comments?.length){const c=comments.find(x=>x.id===n.commentId||x.commentId===n.commentId);if(c)ct=c.content?.text||c.text||""}
-const sn=(s,k)=>s.length>k?s.slice(0,k)+"…":s;let s;
-switch(tl){case"收藏":s="收藏了你的动态";break;case"关注":s="关注了你";break;case"回复评论":s="回复了你的评论";break;case"赞了评论":s="赞了你的评论";break;case"赞了动态":s="赞了你的动态";break;case"评论动态":s="评论了你的动态";break;default:s=tl}
-if(mt&&["赞了动态","收藏","评论动态"].includes(tl))s+=`\n动态：「${sn(mt,60)}」`;if(ct&&["评论动态","回复评论","赞了评论"].includes(tl))s+=`\n评论：「${sn(ct,80)}」`;
-return{desc:s,actor:a,tl,mt}}
-/* ---------- 回复（短锚写法 v8） ---------- */
-function buildReply(o){const AN="查看",w=document.createElement("div");w.className="reply";
-w.innerHTML=`<button class="reply-trig">${IC("reply")}回复</button><div class="panel" hidden><textarea class="ta" rows="2" placeholder="写回复内容…（可插入链接）"></textarea><button class="link-add">${IC("plus")}插入链接</button><div class="link-list"></div><div class="editor" hidden><div class="ed-head"><span class="ed-title">插入链接</span><button class="ed-x" title="收起">${IC("close")}</button></div><div class="ed-seg"><span class="ed-ind"></span><button class="ed-opt on" data-v="LINK_TYPE_WEB">网页链接</button><button class="ed-opt" data-v="LINK_TYPE_MOMENT">作品跳转</button></div><select class="e-type hidden"><option value="LINK_TYPE_WEB" selected>网页链接</option><option value="LINK_TYPE_MOMENT">作品跳转</option></select><div class="ed-fields" data-f="web"><label>跳转网址</label><input class="e-url" placeholder="https://example.com"><label>链接文字</label><input class="e-txt" placeholder="显示在消息里"></div><div class="ed-fields" data-f="moment" hidden><label>作品 momentId</label><input class="e-mid" placeholder="留空即当前动态"></div><div class="acts"><button class="btn-x e-cancel">取消</button><button class="btn-f e-ok">插入</button></div></div><div class="acts"><button class="btn-x s-cancel">取消</button><button class="btn-f s-send">发送</button></div><div class="status" hidden></div></div>`;
-const q=s=>w.querySelector(s),trig=q(".reply-trig"),pn=q(".panel"),ta=q(".ta"),ll=q(".link-list"),ed=q(".editor"),iu=q(".e-url"),it=q(".e-txt"),im=q(".e-mid"),ity=q(".e-type"),seg=q(".ed-seg"),edind=q(".ed-ind"),fw=q('[data-f="web"]'),fm=q('[data-f="moment"]'),st=q(".status"),sd=q(".s-send");
-let links=[],cursor=0,prev="";
-const isMo=()=>ity.value==="LINK_TYPE_MOMENT";
-function resolvedId(){return im.value.trim().replace(/\s+/g,"")||String(o.momentId||"")}
-function autoTxt(id){if(!id)return"";if(o.momentId&&String(o.momentId)===String(id)&&o.momentTitle)return String(o.momentTitle);return momentTitle(id)}
-const short=(s,n)=>s.length>n?s.slice(0,n)+"…":s;
-function hints(){const m=isMo();fw.hidden=m;fm.hidden=!m;edind.style.transform=`translateX(${m?100:0}%)`}
-function reanchor(oldT,newT,quiet){if(oldT===newT)return;let s=0;while(s<oldT.length&&s<newT.length&&oldT[s]===newT[s])s++;let oe=oldT.length,ne=newT.length;while(oe>s&&ne>s&&oldT[oe-1]===newT[ne-1]){oe--;ne--}const dl=ne-oe,out=[],drop=[];
-for(const l of links){const e=l.offset+l.length;if(e<=s){out.push(l);continue}if(s>=l.offset&&oe<=e){const n=l.length+dl;if(n>0){l.length=n;l.text=newT.slice(l.offset,l.offset+n);out.push(l)}else drop.push(l.text);continue}if(l.offset>=oe){l.offset+=dl;out.push(l);continue}drop.push(l.text)}
-links=out.sort((a,b)=>a.offset-b.offset);if(drop.length&&!quiet)show(false,`链接文字改动跨过了边界，已移除 ${drop.length} 条：${drop.join("、")}`)}
-function show(ok,txt){st.hidden=false;line(st,txt,ok?"ok":"fail",ok?"check":"alert","status")}
-function render(){ll.innerHTML="";links.forEach((l,i)=>{const it=document.createElement("div");it.className="link-item";it.innerHTML=`<b>${l.idTarget?"[作品]":"[网页]"}</b><b>${esc(l.customText||l.text)}</b><span class="u">${esc(l.url||l.idTarget||"")}</span><span class="del" data-i="${i}">${IC("close")}</span>`;it.querySelector(".del").onclick=()=>{const r=links.splice(i,1)[0];if(!r)return;const c=r.customText?.length||0,start=c&&r.offset-c>=0&&ta.value.slice(r.offset-c,r.offset)===r.customText?r.offset-c:r.offset,end=r.offset+r.length,n=end-start;ta.value=ta.value.slice(0,start)+ta.value.slice(end);links.forEach(l=>{if(l.offset>=end)l.offset-=n});links.sort((a,b)=>a.offset-b.offset);prev=ta.value;cursor=Math.max(0,Math.min(cursor,start));render()};ll.appendChild(it)})}
-trig.onclick=()=>{pn.hidden=false;cursor=ta.selectionStart??ta.value.length;prev=ta.value;hints();ta.focus()};
-q(".s-cancel").onclick=()=>{pn.hidden=true;links=[];ll.innerHTML="";st.hidden=true;ta.value="";prev=""};
-q(".link-add").onclick=()=>{cursor=ta.selectionStart??cursor??ta.value.length;ed.hidden=false;hints();(isMo()?im:it).focus()};
-q(".e-cancel").onclick=()=>{ed.hidden=true;iu.value="";it.value="";im.value=""};
-q(".ed-x").onclick=()=>{ed.hidden=true};
-seg.querySelectorAll(".ed-opt").forEach(b=>b.onclick=()=>{seg.querySelectorAll(".ed-opt").forEach(x=>x.className="ed-opt");b.className="ed-opt on";ity.value=b.dataset.v;hints();(isMo()?im:it).focus()});
-it.addEventListener("input",hints);im.addEventListener("input",hints);
-ta.addEventListener("input",()=>{reanchor(prev,ta.value,false);prev=ta.value;cursor=ta.selectionStart??ta.value.length;render()});ta.addEventListener("blur",()=>cursor=ta.selectionStart??cursor);
-q(".e-ok").onclick=()=>{const m=isMo();let raw,custom,t;
-if(m){raw=resolvedId();if(!raw){show(false,"请填作品 momentId，或留空以使用当前动态");return}
-const http=/^https?:\/\//i.test(raw);let id=raw;if(http){const s=raw.split(/[/?#]/).filter(Boolean).pop()||"";try{id=decodeURIComponent(s)}catch{id=s}}
-t={idTarget:id,url:http?raw:"https://www.kimi.com/moment/"+encodeURIComponent(id)};
-custom=autoTxt(id)||("作品 "+short(id,20))}
-else{raw=iu.value.trim().replace(/\s+/g,"");if(!raw){show(false,"请先填 1. 跳转网址");return}custom=it.value.trim()||raw;t={idTarget:"",url:raw}}
-const pos=Math.min(cursor,ta.value.length),ins=custom+AN;
-links.forEach(l=>{if(l.offset>=pos)l.offset+=ins.length});ta.value=ta.value.slice(0,pos)+ins+ta.value.slice(pos);
-links.push({url:t.url,idTarget:t.idTarget,text:AN,customText:custom,offset:pos+custom.length,length:AN.length,type:ity.value});links.sort((a,b)=>a.offset-b.offset);prev=ta.value;cursor=pos+ins.length;render();ed.hidden=true;iu.value="";it.value="";im.value="";hints();ta.focus();ta.setSelectionRange(cursor,cursor)};
-sd.onclick=async()=>{const text=ta.value;if(!text.trim()&&!links.length)return;reanchor(prev,text,true);prev=text;for(const l of links){const a=text.slice(l.offset,l.offset+l.length);if(a)l.text=a}
-sd.disabled=true;sd.textContent="发送中…";st.hidden=false;st.className="status";st.textContent="发送中…";
-try{const body={momentId:o.momentId,content:{text}};if(o.targetCommentId)body.targetCommentId=o.targetCommentId;
-if(links.length)body.links=links.map(l=>({type:l.type,text:l.text,displayText:l.customText||l.text,offset:l.offset,length:l.length,...(l.idTarget?{id:l.idTarget}:{}),...(l.url?{url:l.url}:{})}));
-const r=await api(U.cmt,body),back=r?.comment?.links||r?.links||[],srv=back.length?(back[0].displayText||back[0].text||"（空）"):"（响应未带 links）",mine=links.length?(links[0].customText||links[0].text):"—";
-show(true,`已发送（ID: ${(r?.comment||r||{}).id||"未知"}）\n正文里的自定义文字：${mine}\n服务端 displayText（只作用于末尾短锚）：${srv}\n→ 「${mine}」在锚点之外，App 里照常显示`);ta.value="";links=[];ll.innerHTML="";prev=""}
-catch(e){show(false,friendly(e.message))}sd.disabled=false;sd.textContent="发送"};
+let mt="",ct="",mtLinks=[],ctLinks=[];
+if(n.momentId&&moments?.length){const m=moments.find(x=>x.id===n.momentId||x.momentId===n.momentId);if(m){mt=String(m.content?.text||m.text||m.title||"");mtLinks=pickLinks(m)}}
+if(n.commentId&&comments?.length){const c=comments.find(x=>x.id===n.commentId||x.commentId===n.commentId);if(c){ct=String(c.content?.text||c.text||"");ctLinks=pickLinks(c)}}
+const nLinks=pickLinks(n);
+if(!ctLinks.length&&!mtLinks.length&&nLinks.length){if(ct)ctLinks=nLinks;else if(mt)mtLinks=nLinks}
+const sn=(s,k)=>s.length>k?s.slice(0,k)+"…":s;let head;
+switch(tl){case"收藏":head="收藏了你的动态";break;case"关注":head="关注了你";break;case"回复评论":head="回复了你的评论";break;case"赞了评论":head="赞了你的评论";break;case"赞了动态":head="赞了你的动态";break;case"评论动态":head="评论了你的动态";break;default:head=tl}
+let s=head,h=esc(head);
+/* 带 links 时不截断，保证 offset/length 区间完整；标注直接内联在正文这句话里 */
+if(mt&&["赞了动态","收藏","评论动态"].includes(tl)){const shown=mtLinks.length?mt:sn(mt,60);
+s+=`\n动态：「${shown}」`;h+=`<br>动态：「${rich(shown,mtLinks)}」`}
+if(ct&&["评论动态","回复评论","赞了评论"].includes(tl)){const shown=ctLinks.length?ct:sn(ct,80);
+s+=`\n评论：「${shown}」`;h+=`<br>评论：「${rich(shown,ctLinks)}」`}
+const nk=mtLinks.length+ctLinks.length;
+return{desc:s,actor:a,tl,mt,descHtml:h,linkInfo:nk?("链接 "+nk+" 处"):""}}
+/* ---------- 回复：独立悬浮窗 ----------
+   · 作品跳转：正文里只放「查看」占位，不再拼自定义文字 / 锚点前缀
+   · 网页链接：正文里直接用输入的链接文字占位，不再追加「查看」
+   · offset/length 统一按 Unicode 字符（code point）算，🔗 算 1 个，与抓包 body 一致 */
+function buildReply(o){
+ const w=document.createElement("div");w.className="reply";
+ const t=document.createElement("button");t.className="reply-trig";t.innerHTML=IC("reply")+"回复";
+ t.onclick=()=>openReplyModal(o);w.appendChild(t);return w}
+const cp=s=>Array.from(s||""),cpLen=s=>cp(s).length;
+const cpSlice=(s,a,b)=>cp(s).slice(a,b===undefined?undefined:b).join("");
+const u16ToCp=(s,i)=>cp(s.slice(0,i)).length;
+const cpToU16=(s,i)=>cp(s).slice(0,i).join("").length;
+function openReplyModal(o){
+ if($("replyMask"))return;                                    /* 同时只允许一个回复窗 */
+ const AN="查看";
+ const mask=document.createElement("div");mask.className="mask";mask.id="replyMask";
+ mask.innerHTML=`<div class="modal wide reply-modal" role="dialog" aria-modal="true">
+  <div class="ed-head"><span class="ed-title">回复消息</span><button class="ed-x r-close" title="关闭">${IC("close")}</button></div>
+  <p class="reply-to">回复动态 #${esc(cut(o.momentId,28))}${o.targetCommentId?" · 评论 #"+esc(cut(o.targetCommentId,24)):""}</p>
+  <textarea class="ta" rows="3" placeholder="写回复内容…（可插入链接）"></textarea>
+  <div class="ed-preview" hidden></div>
+  <button class="link-add">${IC("plus")}插入链接</button>
+  <div class="link-list"></div>
+  <div class="editor" hidden>
+   <div class="ed-seg"><span class="ed-ind"></span><button class="ed-opt on" data-v="LINK_TYPE_WEB">网页链接</button><button class="ed-opt" data-v="LINK_TYPE_MOMENT">作品跳转</button></div>
+   <select class="e-type hidden"><option value="LINK_TYPE_WEB" selected>网页链接</option><option value="LINK_TYPE_MOMENT">作品跳转</option></select>
+   <div class="ed-fields" data-f="web"><label>跳转网址</label><input class="e-url link-in" placeholder="https://example.com"><label>链接文字（直接作为正文占位）</label><input class="e-txt link-in" placeholder="不填则用网址"></div>
+   <div class="ed-fields" data-f="moment" hidden><label>作品 momentId</label><input class="e-mid link-in" placeholder="留空即当前动态"></div>
+   <div class="acts"><button class="btn-x e-cancel">取消</button><button class="btn-f e-ok">插入</button></div>
+  </div>
+  <div class="acts"><button class="btn-x s-cancel">关闭</button><button class="btn-f s-send">发送</button></div>
+  <div class="status" hidden></div></div>`;
+ document.body.appendChild(mask);
+ const close=()=>{if(mask.classList.contains("closing"))return;mask.classList.add("closing");setTimeout(()=>mask.remove(),200)};
+ mask.onclick=e=>{if(e.target===mask)close()};
+ const q=x=>mask.querySelector(x),ta=q(".ta"),pv=q(".ed-preview"),ll=q(".link-list"),ed=q(".editor"),
+  iu=q(".e-url"),it=q(".e-txt"),im=q(".e-mid"),ity=q(".e-type"),seg=q(".ed-seg"),edind=q(".ed-ind"),
+  fw=q('[data-f="web"]'),fm=q('[data-f="moment"]'),st=q(".status"),sd=q(".s-send");
+ let links=[],cursor=0,prev="";
+ const isMo=()=>ity.value==="LINK_TYPE_MOMENT";
+ function resolvedId(){return im.value.trim().replace(/\s+/g,"")||String(o.momentId||"")}
+ function hints(){const m=isMo();fw.hidden=m;fm.hidden=!m;edind.style.transform=`translateX(${m?100:0}%)`}
+ /* 编辑器收展用 MD3 曲线：先播完 280ms 展开 / 220ms 收起，再改 hidden，不再瞬间消失 */
+ function showEditor(){clearTimeout(ed._edT);
+  if(!ed.hidden&&!ed.classList.contains("md3-ed-out"))return;
+  ed.classList.remove("md3-ed-out");ed.hidden=false;
+  ed.classList.remove("md3-ed-in");void ed.offsetWidth;ed.classList.add("md3-ed-in");
+  ed._edT=setTimeout(()=>ed.classList.remove("md3-ed-in"),300)}
+ function hideEditor(){if(ed.hidden||ed.classList.contains("md3-ed-out"))return;
+  clearTimeout(ed._edT);ed.classList.remove("md3-ed-in");ed.classList.add("md3-ed-out");
+  ed._edT=setTimeout(()=>{ed.hidden=true;ed.classList.remove("md3-ed-out")},230)}
+ function show(ok,txt){st.hidden=false;line(st,txt,ok?"ok":"fail",ok?"check":"alert","status")}
+ /* 实时预览：把已插入的链接按卡片里同款 .lk 标注出来 */
+ function preview(){const t=ta.value;if(!t){pv.hidden=true;return}pv.hidden=false;
+  const ls=links.map(l=>({offset:l.offset,length:l.length,text:l.text,displayText:l.text,url:l.url,id:l.idTarget}));
+  pv.innerHTML=(ls.length?rich(t,ls):esc(t)).replace(/\n/g,"<br>")}
+ function reanchor(oldT,newT,quiet){if(oldT===newT)return;
+  const O=cp(oldT),N=cp(newT);let s=0;while(s<O.length&&s<N.length&&O[s]===N[s])s++;
+  let oe=O.length,ne=N.length;while(oe>s&&ne>s&&O[oe-1]===N[ne-1]){oe--;ne--}
+  const dl=ne-oe,out=[],drop=[];
+  for(const l of links){const e=l.offset+l.length;
+   if(e<=s){out.push(l);continue}
+   if(s>=l.offset&&oe<=e){const n=l.length+dl;if(n>0){l.length=n;l.text=cpSlice(newT,l.offset,l.offset+n);out.push(l)}else drop.push(l.text);continue}
+   if(l.offset>=oe){l.offset+=dl;out.push(l);continue}
+   drop.push(l.text)}
+  links=out.sort((a,b)=>a.offset-b.offset);
+  if(drop.length&&!quiet)show(false,`链接文字改动跨过了边界，已移除 ${drop.length} 条：${drop.join("、")}`)}
+ function render(){ll.innerHTML="";links.forEach((l,i)=>{
+  const itm=document.createElement("div");itm.className="link-item";
+  itm.innerHTML=`<b>${l.idTarget?"[作品]":"[网页]"}</b><b>${esc(l.text)}</b><span class="u">${esc(l.url||l.idTarget||"")}</span><span class="del" data-i="${i}">${IC("close")}</span>`;
+  itm.querySelector(".del").onclick=()=>{
+   const r=links.splice(i,1)[0];if(!r)return;
+   const C=cp(ta.value),start=r.offset,end=Math.min(r.offset+r.length,C.length),n=end-start;
+   ta.value=C.slice(0,start).join("")+C.slice(end).join("");
+   links.forEach(l=>{if(l.offset>=end)l.offset-=n});
+   links.sort((a,b)=>a.offset-b.offset);prev=ta.value;
+   cursor=Math.max(0,Math.min(cursor,start));render();preview()};
+  ll.appendChild(itm)})}
+ /* 悬浮窗打开即完整可用，不再需要先点一次展开 */
+ q(".r-close").onclick=close;q(".s-cancel").onclick=close;
+ q(".link-add").onclick=()=>{cursor=u16ToCp(ta.value,ta.selectionStart??ta.value.length);showEditor();hints();(isMo()?im:it).focus()};
+ q(".e-cancel").onclick=()=>{hideEditor();iu.value="";it.value="";im.value=""};
+ q(".ed-x").onclick=hideEditor;
+ seg.querySelectorAll(".ed-opt").forEach(b=>b.onclick=()=>{seg.querySelectorAll(".ed-opt").forEach(x=>x.className="ed-opt");b.className="ed-opt on";ity.value=b.dataset.v;hints();(isMo()?im:it).focus()});
+ it.addEventListener("input",hints);im.addEventListener("input",hints);
+ ta.addEventListener("input",()=>{reanchor(prev,ta.value,false);prev=ta.value;cursor=u16ToCp(ta.value,ta.selectionStart??ta.value.length);render();preview()});
+ ta.addEventListener("blur",()=>cursor=u16ToCp(ta.value,ta.selectionStart??cpLen(ta.value)));
+ q(".e-ok").onclick=()=>{
+  const m=isMo();let raw,ins,t;
+  if(m){raw=resolvedId();if(!raw){show(false,"请填作品 momentId，或留空以使用当前动态");return}
+   const http=/^https?:\/\//i.test(raw);let id=raw;
+   if(http){const z=raw.split(/[/?#]/).filter(Boolean).pop()||"";try{id=decodeURIComponent(z)}catch{id=z}}
+   t={idTarget:id,url:http?raw:"https://www.kimi.com/moment/"+encodeURIComponent(id)};
+   ins=AN;                                    /* 作品跳转：只有「查看」占位 */
+  }else{raw=iu.value.trim().replace(/\s+/g,"");if(!raw){show(false,"请先填 1. 跳转网址");return}
+   ins=it.value.trim()||raw;                  /* 网页链接：直接用输入文字占位 */
+   t={idTarget:"",url:raw}}
+  const C=cp(ta.value),pos=Math.min(cursor,C.length),L=cpLen(ins);
+  links.forEach(l=>{if(l.offset>=pos)l.offset+=L});
+  ta.value=C.slice(0,pos).join("")+ins+C.slice(pos).join("");
+  links.push({url:t.url,idTarget:t.idTarget,text:ins,customText:ins,offset:pos,length:L,type:ity.value});
+  links.sort((a,b)=>a.offset-b.offset);
+  prev=ta.value;cursor=pos+L;render();preview();
+  hideEditor();iu.value="";it.value="";im.value="";hints();
+  ta.focus();const u=cpToU16(ta.value,cursor);ta.setSelectionRange(u,u)};
+ sd.onclick=async()=>{
+  const text=ta.value;if(!text.trim()&&!links.length)return;
+  reanchor(prev,text,true);prev=text;
+  for(const l of links){const a=cpSlice(text,l.offset,l.offset+l.length);if(a){l.text=a;l.customText=a}}
+  sd.disabled=true;sd.textContent="发送中…";st.hidden=false;st.className="status";st.textContent="发送中…";
+  try{const body={momentId:o.momentId,content:{text}};
+   if(o.targetCommentId)body.targetCommentId=o.targetCommentId;
+   if(links.length)body.links=links.map(l=>({type:l.type,text:l.text,displayText:l.text,offset:l.offset,length:l.length,
+    ...(l.idTarget?{id:l.idTarget}:{}),...(l.url?{url:l.url}:{})}));
+   const r=await api(U.cmt,body);
+   show(true,`已发送（ID: ${(r?.comment||r||{}).id||"未知"}）\n链接 ${links.length} 处`);
+   ta.value="";links=[];ll.innerHTML="";prev="";preview()}
+  catch(e){show(false,friendly(e.message))}
+  sd.disabled=false;sd.textContent="发送"};
+ ity.value=ity.value||"LINK_TYPE_WEB";           /* 显式定默认，不依赖浏览器解析 selected */
+ hints();preview();ta.focus()}
+/* ---------- 点赞：按文档对齐，结果只用一个轻弹窗 ----------
+   文档 L13737 / L15046 / L17496 / L25054：
+   · moment.v1.CommentService/VoteComment → VoteCommentRequest{commentId, voteAction}
+     voteAction: COMMENT_VOTE_ACTION_LIKE / COMMENT_VOTE_ACTION_CANCEL_LIKE
+   · moment.v1.MomentService/VoteMoment   → VoteMomentRequest{momentId, voteAction}
+     voteAction: MOMENT_VOTE_ACTION_LIKE / MOMENT_VOTE_ACTION_CANCEL_LIKE
+   响应 VoteXxxResponse 是空消息 {}（2xx 即成功）。 */
+const VOTE_KEY="kimi_votes";
+function voteState(){try{return JSON.parse(localStorage.getItem(VOTE_KEY))||{}}catch{return{}}}
+/* 服务端状态优先；服务端没给该实体时才用本地兜底 */
+function voted(kind,id){const k=kind+":"+id;return voteTruth.has(k)?!!voteTruth.get(k):!!voteState()[k]}
+function markVote(kind,id,on){const k=kind+":"+id;voteTruth.set(k,!!on);
+const s=voteState();s[k]=!!on;try{localStorage.setItem(VOTE_KEY,JSON.stringify(s))}catch{}
+syncAllVotes()}
+/* 全页复用同一个轻弹窗；成功只闪「已点赞 / 已取消点赞」，失败也只一句短语 */
+let toastEl=null,toastTimer=0;
+function toast(msg,ok=true,ico,ms){
+ if(!toastEl){toastEl=document.createElement("div");toastEl.className="toast";document.body.appendChild(toastEl)}
+ toastEl.className="toast"+(ok?"":" fail");
+ toastEl.innerHTML=IC(ico||(ok?"check":"alert"))+"<span>"+esc(msg)+"</span>";
+ requestAnimationFrame(()=>{if(toastEl)toastEl.classList.add("on")});
+ clearTimeout(toastTimer);
+ toastTimer=setTimeout(()=>{if(toastEl)toastEl.classList.remove("on")},ms||1800)}
+/* 只取服务端一句短语，不再展示请求体 / 响应体 */
+function errBrief(e){const b=e&&e.body;if(b&&typeof b==="object"){
+const m=b.details?.[0]?.debug?.localizedMessage?.message||b.message||b.code||"";
+return (m?String(m):JSON.stringify(b)).slice(0,80)}return String(b??e?.rawText??e?.message??"").slice(0,80)}
+function buildVote(o){
+const w=document.createElement("div");w.className="like-wrap";
+const specs=[];
+if(o.commentVote&&o.commentId)specs.push({kind:"c",id:String(o.commentId),label:"赞评论",uri:U.voteCmt,field:"commentId",
+  like:"COMMENT_VOTE_ACTION_LIKE",cancel:"COMMENT_VOTE_ACTION_CANCEL_LIKE"});
+if(o.momentId)specs.push({kind:"m",id:String(o.momentId),label:"赞动态",uri:U.voteMoment,field:"momentId",
+  like:"MOMENT_VOTE_ACTION_LIKE",cancel:"MOMENT_VOTE_ACTION_CANCEL_LIKE"});
+for(const sp of specs){
+ const btn=document.createElement("button");btn.className="like-btn";
+ /* 保留固定 DOM，只换图标与文字内容：不再整块 innerHTML 重建造成突变 */
+ btn.innerHTML='<span class="lb-ic"></span><span class="lb-tx"></span>';
+ const ic=btn.querySelector(".lb-ic"),tx=btn.querySelector(".lb-tx");
+ let last=null;
+ const paint=(animate)=>{const on=voted(sp.kind,sp.id);
+  btn.className="like-btn"+(on?" on":"");
+  ic.innerHTML=IC(on?"thumbOn":"thumb");
+  tx.textContent=(on?"已赞 · ":"")+sp.label;
+  btn.title=on?"再点一次取消赞":`给${sp.kind==="c"?"这条评论":"这条动态"}点赞`;
+  if(animate){                       /* 局部动效：图标 pop + 文字上滑，不做整块淡入淡出 */
+   ic.classList.remove("pop");tx.classList.remove("swap");
+   void ic.offsetWidth;             /* 强制重排，连点也能重播 */
+   ic.classList.add("pop");tx.classList.add("swap");
+   setTimeout(()=>{ic.classList.remove("pop");tx.classList.remove("swap")},360);
+  }
+  last=on};
+ paint();
+ paint.__btn=btn;regVote(sp.kind+":"+sp.id,paint);
+ btn.onclick=async()=>{
+  const on=voted(sp.kind,sp.id),action=on?sp.cancel:sp.like;
+  const body={[sp.field]:sp.id,voteAction:action};
+  btn.disabled=true;let flipped=false;
+  try{await api(sp.uri,body);
+   markVote(sp.kind,sp.id,!on);flipped=true;
+   toast(on?"已取消点赞":"已点赞")}
+  catch(e){console.warn("[点赞]",e.status,e.body);
+   const brief=errBrief(e),already=e.status===409||/already_exists|already.*(like|vote)|重复/i.test(brief);
+   if(already){markVote(sp.kind,sp.id,true);flipped=true;toast("已点赞")}
+   else toast((on?"取消点赞":"点赞")+"失败："+brief,false)}
+  btn.disabled=false;
+  if(flipped)paint(true);           /* 动画在按钮恢复后播，不受 disabled 半透明影响 */};
+ w.appendChild(btn)}
 return w}
+
+/* ---------- MD3 弹窗：显示即展开，隐藏先播 200ms 退出动画 ---------- */
+function showMask(el){if(!el)return;clearTimeout(el._hideT);el.classList.remove("closing");el.classList.remove("hidden")}
+function hideMask(el){if(!el||el.classList.contains("hidden")||el.classList.contains("closing"))return;
+ el.classList.add("closing");
+ el._hideT=setTimeout(()=>{el.classList.remove("closing");el.classList.add("hidden")},200)}
+function dismissReplyMask(){const rm=$("replyMask");if(!rm||rm.classList.contains("closing"))return;
+ rm.classList.add("closing");setTimeout(()=>rm.remove(),200)}
+/* ---------- 点击动态信息 → 二次确认 → kimi:// 深链 ---------- */
+let jumpId="";
+function askJump(id){if(!id)return;jumpId=String(id);showMask($("jumpMask"))}
+function closeJump(){hideMask($("jumpMask"));jumpId=""}
 /* ---------- 卡片 ---------- */
 function card(o){const el=document.createElement("article");el.className="msg";
-const meta=(o.meta||[]).filter(Boolean).join(" · ");el.innerHTML=`${avatarHtml(o.user)}<div class="body"><div class="head"><span class="name">${esc(o.name||"Kimi")}</span><span class="chip${ALT.has(o.tag)?" alt":""}">${esc(o.tag||"通知")}</span>${o.time?`<span class="time" title="${esa(o.rawTime||"")}">${esc(o.time)}</span>`:""}</div><div class="desc">${esc(o.desc).replace(/\n/g,"<br>")}</div>${o.content?`<div class="content">${esc(o.content)}</div>`:""}${meta?`<div class="meta">${esc(meta)}</div>`:""}</div>`;
+el.style.animationDelay=(o.stagger||0)+"ms";   /* MD3 递减 stagger，上限 240ms */
+/* 动态 #id 做成可点：弹二次确认再走 kimi:// 深链 */
+const metaHtml=(o.meta||[]).filter(Boolean).map(m=>{const t=String(m);
+ return (o.momentId&&t.indexOf("动态 #")===0)
+  ? `<button class="moment-jump" data-mid="${esa(String(o.momentId))}">${IC("external")}${esc(t)}</button>`
+  : esc(t)}).join(" · ");
+const descHtml=o.descHtml||esc(o.desc).replace(/\n/g,"<br>");
+el.innerHTML=`${avatarHtml(o.user)}<div class="body"><div class="head"><span class="name">${esc(o.name||"Kimi")}</span><span class="chip">${esc(o.tag||"通知")}</span>${o.time?`<span class="time" title="${esa(o.rawTime||"")}">${esc(o.time)}</span>`:""}</div><div class="desc">${descHtml}</div>${o.content?`<div class="content">${esc(o.content)}</div>`:""}${metaHtml?`<div class="meta">${metaHtml}</div>`:""}</div>`;
 el.querySelectorAll(".av img").forEach(img=>img.onerror=()=>img.remove());
-if(o.replyable&&o.momentId)el.querySelector(".body").appendChild(buildReply({momentId:o.momentId,momentTitle:o.momentTitle,targetCommentId:o.targetCommentId}));return el}
-function sum(txt,hot,tab){const d=document.createElement("div");d.className="sum"+(hot?"":" calm");d.innerHTML=IC("circle")+"<span>"+esc(txt)+"</span>";const b=document.createElement("button");b.className="rst";b.textContent="重置记录";b.onclick=()=>{const o=readLoad()||{};delete o[tab];readSave(o);b.textContent="已清除";setTimeout(()=>b.textContent="重置记录",1600)};d.appendChild(b);return d}
-function sinceEl(prev,fresh){const e=document.createElement("div");e.className="since";e.innerHTML=`<span class="ln"></span><span>${IC("up")} 上次读到 <b>${esc(abs(prev))}</b> · 以上 <b>${fresh}</b> 条是之后的新消息</span><span class="ln"></span>`;return e}
+el.querySelectorAll(".moment-jump").forEach(b=>b.onclick=()=>askJump(b.dataset.mid));
+if(o.replyable||o.commentId||o.momentId){const ops=document.createElement("div");ops.className="ops";
+if(o.replyable&&o.momentId)ops.appendChild(buildReply({momentId:o.momentId,momentTitle:o.momentTitle,targetCommentId:o.targetCommentId}));
+if(o.commentId||o.momentId)ops.appendChild(buildVote({commentVote:o.commentVote,commentId:o.commentId,momentId:o.momentId}));
+el.querySelector(".body").appendChild(ops)}
+return el}
+function sum(txt,hot,tab,fresh){const d=document.createElement("div");d.className="sum"+(hot?"":" calm");d.innerHTML=IC("circle")+"<span>"+esc(txt)+"</span>";
+const b=document.createElement("button");b.className="rst";b.textContent="重置记录";b.onclick=()=>{const o=readLoad()||{};delete o[tab];readSave(o);b.textContent="已清除";setTimeout(()=>b.textContent="重置记录",1600)};d.appendChild(b);
+if(fresh>0){const bg=document.createElement("span");bg.className="new-badge";bg.textContent=`新增 ${fresh} 条`;d.insertBefore(bg,b);
+ setTimeout(()=>{bg.classList.add("out");d.classList.add("calm");setTimeout(()=>bg.remove(),320)},5000)}
+return d}
+function sinceEl(prev,fresh){const e=document.createElement("div");e.className="since";e.innerHTML=`<span class="ln"></span><span>${IC("up")} 上次读到 <b>${esc(abs(prev))}</b> · 以上 <b>${fresh}</b> 条是之后的新消息</span><span class="ln"></span>`;
+ /* 新消息提示只停留 5 秒，不再一直挂在列表里 */
+ setTimeout(()=>{if(e)e.classList.add("out")},5000);return e}
 function errbox(t){const d=document.createElement("div");d.className="errbox";d.textContent=String(t).split("\n").map(friendly).join("\n");return d}
 /* 统一水位：按「上次刷新时见到的最新时间」推进，列表里插一条分割线 */
 function water(tab,rows){const prev=wm(tab);let max=prev;for(const r of rows)if(r.ts>max)max=r.ts;const fresh=prev?rows.filter(r=>r.ts>prev).length:0;return{prev,max,fresh}}
-function renderMoment(el,d){el.innerHTML="";indexMoments(d);
+function renderMoment(el,d){el.innerHTML="";indexMoments(d);applyTruth(d);
 const rows=d.notifications.map(n=>({n,ts:stamp(n.happenedTime??n.happened_time??n.createTime)}));
 const w=water("moment",rows);
-el.appendChild(sum(w.prev?`共 ${rows.length} 条 · 上次读到 ${abs(w.prev)} · 新增 ${w.fresh} 条`:`共 ${rows.length} 条 · 首次加载，已记下当前位置`,w.fresh>0,"moment"));
+el.appendChild(sum(w.prev?`共 ${rows.length} 条 · 上次读到 ${abs(w.prev)}`:`共 ${rows.length} 条 · 首次加载，已记下当前位置`,w.fresh>0,"moment",w.fresh));
 if(d.errors.length)el.appendChild(errbox(d.errors.join("\n")));
 if(!rows.length&&!d.errors.length){el.insertAdjacentHTML("beforeend",'<div class="empty">暂无社区通知</div>');wmSave("moment",w.max);return}
 let placed=false;
-for(const r of rows){const n=r.n;if(w.prev&&w.fresh>0&&!placed&&r.ts<=w.prev){el.appendChild(sinceEl(w.prev,w.fresh));placed=true}
+for(let idx=0;idx<rows.length;idx++){const r=rows[idx];const n=r.n;if(w.prev&&w.fresh>0&&!placed&&r.ts<=w.prev){el.appendChild(sinceEl(w.prev,w.fresh));placed=true}
 const i=describe(n,d.users,d.comments,d.moments),rt=n.happenedTime??n.happened_time??n.createTime;
-el.appendChild(card({user:i.actor.u||i.actor,name:i.actor.name,tag:i.tl,time:rel(rt),rawTime:cut(rt,40),desc:i.desc,
-meta:[n.id&&"ID "+cut(n.id,28),n.momentId&&"动态 #"+cut(n.momentId,24),n.commentId&&"评论 #"+cut(n.commentId,24)],replyable:REPLYABLE.has(i.tl)&&!!n.momentId,momentId:n.momentId,momentTitle:i.mt,targetCommentId:n.commentId||undefined}))}
+el.appendChild(card({user:i.actor.u||i.actor,name:i.actor.name,tag:i.tl,time:rel(rt),rawTime:cut(rt,40),desc:i.desc,descHtml:i.descHtml,
+meta:[n.id&&"ID "+cut(n.id,28),n.momentId&&"动态 #"+cut(n.momentId,24),n.commentId&&"评论 #"+cut(n.commentId,24),i.linkInfo],
+stagger:Math.min(240,Math.round(Math.pow(idx,1.5)*15)),
+replyable:REPLYABLE.has(i.tl)&&!!n.momentId,commentVote:REPLYABLE.has(i.tl)&&!!n.commentId,
+momentId:n.momentId,momentTitle:i.mt,targetCommentId:n.commentId||undefined,commentId:n.commentId||undefined}))}
 if(w.prev&&w.fresh>0&&!placed)el.appendChild(sinceEl(w.prev,w.fresh));
 wmSave("moment",w.max)}
-function renderInapp(el,d){el.innerHTML="";
-const rows=d.items.map(it=>({it,ts:stamp(it.createTime??it.notification?.createTime)}));
-const w=water("inapp",rows);
-el.appendChild(sum(w.prev?`共 ${rows.length} 条 · 上次读到 ${abs(w.prev)} · 新增 ${w.fresh} 条`:`共 ${rows.length} 条 · 首次加载，已记下当前位置`,w.fresh>0,"inapp"));
-if(d.errors.length)el.appendChild(errbox(d.errors.join("\n")));
-if(!rows.length&&!d.errors.length){el.insertAdjacentHTML("beforeend",'<div class="empty">暂无站内推送</div>');wmSave("inapp",w.max);return}
-let placed=false;
-for(const r of rows){const it=r.it;if(w.prev&&w.fresh>0&&!placed&&r.ts<=w.prev){el.appendChild(sinceEl(w.prev,w.fresh));placed=true}
-const n=it.notification||{},tl=IM[n.type]??String(n.type??"通知"),rt=it.createTime??n.createTime;
-el.appendChild(card({user:null,name:"Kimi",tag:tl,time:rel(rt),rawTime:cut(rt,40),desc:n.title||tl,content:n.content?cut(n.content,140):"",meta:[it.id&&"ID "+cut(it.id,28),n.deeplink&&"跳转 "+cut(n.deeplink,70)]}))}
-if(w.prev&&w.fresh>0&&!placed)el.appendChild(sinceEl(w.prev,w.fresh));
-wmSave("inapp",w.max)}
 /* ---------- 二维码：可复用控制器，登录页 / 账户弹窗各一份 ---------- */
 function device(){const k="kfp_qr_wid";let d=localStorage.getItem(k);if(!d){const b=new Uint8Array(8);try{crypto.getRandomValues(b)}catch{for(let i=0;i<8;i++)b[i]=Math.random()*256|0}d="w"+Date.now().toString(36)+Array.from(b).map(x=>x.toString(16).padStart(2,"0")).join("");localStorage.setItem(k,d)}return d}
 const qcontent=c=>`https://www.kimi.com/wechat/mp/auth?id=${encodeURIComponent(c)}&device_id=${encodeURIComponent(device())}`;
@@ -610,7 +1160,7 @@ function setMTab(i){mTab=["qr","paste","bridge"][i]||"paste";
 $("mInd").style.transform=`translateX(${i*100}%)`;
 document.querySelectorAll(".m-tab").forEach((t,j)=>{t.className="m-tab"+(j===i?" on":"");t.setAttribute("aria-selected",j===i?"true":"false")});
 document.querySelectorAll(".m-pane").forEach(p=>p.hidden=p.dataset.p!==mTab)}
-function closeAcctModal(){qrModal.stop();bridgeTarget="panel";$("acctMask").classList.add("hidden")}
+function closeAcctModal(){qrModal.stop();bridgeTarget="panel";hideMask($("acctMask"))}
 function modalGotRt(v,from){v=String(v||"").trim();if(!v)return;$("acctNewRt").value=v;setMTab(1);mStatus(from+"：refresh_token 已填入，点底部保存后生效","ok")}
 function openAcctModal(mode,id){acctMode=mode;acctEditId=id||"";bridgeTarget="modal";const a=accList().find(x=>x.id===id);
 $("acctTitle").textContent=mode==="edit"?"修改账户":"新建账户";
@@ -619,7 +1169,7 @@ $("acctNewName").value=mode==="edit"?(a?a.name:""):"";
 $("acctNewRt").value=mode==="edit"?(a?a.refreshToken||"":""):"";
 $("mDid").value=mode==="edit"?(a?a.deviceId||"":""):"";$("mSid").value=mode==="edit"?(a?a.sessionId||"":""):"";
 $("acctOk").textContent=mode==="edit"?"保存修改":"保存并切换";
-qrModal.stop();mStatus("","");setMTab(1);$("acctMask").classList.remove("hidden");
+qrModal.stop();mStatus("","");setMTab(1);showMask($("acctMask"));
 setTimeout(()=>{try{$("acctNewName").focus()}catch(e){}},0)}
 document.querySelectorAll(".m-tab").forEach((t,i)=>t.onclick=()=>setMTab(i));
 $("mGenQr").onclick=()=>qrModal.gen();$("mCancelQr").onclick=()=>qrModal.cancel();
@@ -649,10 +1199,10 @@ rf=v;at="";aexp=0;did=d;sid=s;rpromise=null;activeId=cur.id;sync();renderAccount
 $("rfInput").value=v;$("didInput").value=d;$("sidInput").value=s;
 $("acctMenu").classList.add("hidden");closeAcctModal();setBridge("已保存账户「"+cur.name+"」，正在登录…","ok");doLogin()};
 function askDel(id){const a=accList().find(x=>x.id===id);if(!a)return;delTargetId=id;
-$("delDesc").textContent="将移除「"+a.name+"」及本机保存的 rt，该账户的「上次读到哪」记录也会一并删除。";$("delMask").classList.remove("hidden")}
-$("delCancel").onclick=()=>{$("delMask").classList.add("hidden");delTargetId=""};
-$("delMask").onclick=e=>{if(e.target===$("delMask")){$("delMask").classList.add("hidden");delTargetId=""}};
-$("delOk").onclick=()=>{$("delMask").classList.add("hidden");if(delTargetId)delAccount(delTargetId);delTargetId=""};
+$("delDesc").textContent="将移除「"+a.name+"」及本机保存的 rt，该账户的「上次读到哪」记录也会一并删除。";showMask($("delMask"))}
+$("delCancel").onclick=()=>{hideMask($("delMask"));delTargetId=""};
+$("delMask").onclick=e=>{if(e.target===$("delMask")){hideMask($("delMask"));delTargetId=""}};
+$("delOk").onclick=()=>{hideMask($("delMask"));if(delTargetId)delAccount(delTargetId);delTargetId=""};
 $("btnAcct").onclick=e=>{e.stopPropagation();renderAccounts();$("acctMenu").classList.toggle("hidden")};
 $("acctList").onclick=e=>{const t=e.target,row=t.closest?t.closest("[data-id]"):null;if(!row)return;
 const id=row.dataset.id,op=t.closest?t.closest("[data-op]"):null;
@@ -687,36 +1237,128 @@ $("rfInput").value=v;if(rf&&v!==rf){at="";aexp=0;const a=putAccount(v,"");render
 window.addEventListener("message",e=>{const d=e.data;if(!d||d.__kimi_rt!==1||typeof d.refreshToken!=="string")return;acceptRt(d.refreshToken,"已从 kimi.com 收到")});
 /* ---------- 登录 / 刷新 ---------- */
 function doLogout(){if(rf){try{const h=head();if(at)h.Authorization="Bearer "+at;fetch(U.logout,{method:"POST",headers:h,body:JSON.stringify({refresh_token:rf})}).catch(()=>{})}catch{}}
-clearInterval(rtimer);rtimer=null;qrPanel.stop();qrModal.stop();sync();clear();at="";aexp=0;rf="";did="";sid="";rpromise=null;activeId="";
+clearInterval(rtimer);rtimer=null;qrPanel.stop();qrModal.stop();poll.stop();sync();clear();at="";aexp=0;rf="";did="";sid="";rpromise=null;activeId="";
 $("configSec").classList.remove("hidden");$("btnLogout").classList.add("hidden");$("rfInput").value="";$("rfInput").placeholder="粘贴 refresh_token…";$("didInput").value="";$("sidInput").value="";
-line($("bridgeSt"),"");line($("loginSt"),"已退出当前账户（已保存账户仍在，点顶部可切回）");$("status").textContent="未登录";setSt("","");$("momentBody").innerHTML='<div class="empty">登录成功后点右上角刷新<br>加载社区与站内消息</div>';$("inappBody").innerHTML="";renderAccounts();requestAnimationFrame(fitViewport)}
-function onLogin(msg){if(rf){const cur=accGet();if(!cur||cur.refreshToken!==rf)putAccount(rf,"")}qrPanel.stop();$("rfInput").value="";$("rfInput").placeholder="粘贴新的 refresh_token 可添加账户…";$("configSec").classList.add("hidden");$("btnLogout").classList.remove("hidden");$("status").textContent=msg;line($("loginSt"),msg,"ok","check");renderAccounts();autoRefresh();refreshData()}
+line($("bridgeSt"),"");line($("loginSt"),"已退出当前账户（已保存账户仍在，点顶部可切回）");$("status").textContent="未登录";setSt("","");$("momentBody").innerHTML='<div class="empty">登录成功后点右上角刷新<br>加载社区互动消息</div>';renderAccounts()}
+function onLogin(msg){if(rf){const cur=accGet();if(!cur||cur.refreshToken!==rf)putAccount(rf,"")}qrPanel.stop();$("rfInput").value="";$("rfInput").placeholder="粘贴新的 refresh_token 可添加账户…";$("configSec").classList.add("hidden");$("btnLogout").classList.remove("hidden");$("status").textContent=msg;line($("loginSt"),msg,"ok","check");renderAccounts();autoRefresh();poll.reset();refreshData()}
 async function doLogin(){const v=$("rfInput").value.trim(),d=$("didInput").value.trim(),s=$("sidInput").value.trim(),e=$("loginSt");
 if(v&&v!=="（已保存）"){const changed=v!==rf;if(changed){at="";aexp=0;did="";sid=""}rf=v;if(changed)putAccount(v,"")}if(d)did=d;if(s)sid=s;
 if(!rf){line(e,"请粘贴 refresh_token","err");return}line(e,"登录中…","","");try{await refresh();save();onLogin("登录成功，token 已保存")}catch(x){line(e,x.message,"err")}}
 if(location.protocol==="file:"){setSt("当前是 file:// 打开，扫码接口与剪贴板都会被浏览器拦截。请起本地服务：python3 -m http.server 8000","err");setBridge("file:// 下剪贴板与回传可能不可用，请用 http://localhost:8000 打开。","err")}
-let curTab=0;
-function fitViewport(){const v=document.querySelector(".viewport"),ps=document.querySelectorAll(".pane");if(!v||!ps.length)return;const h=ps[curTab]?.scrollHeight||0;if(h>0)v.style.height=h+"px"}
-function setTab(i){curTab=i;$("tabInd").style.transform=`translateX(${i*100}%)`;$("tabTrack").style.transform=`translateX(-${i*50}%)`;
-document.querySelectorAll(".tab").forEach((t,j)=>{t.className="tab"+(j===i?" on":"");t.setAttribute("aria-selected",j===i?"true":"false")});
-$("momentBody").setAttribute("aria-hidden",i!==0?"true":"false");$("inappBody").setAttribute("aria-hidden",i!==1?"true":"false");requestAnimationFrame(fitViewport)}
-document.querySelectorAll(".tab").forEach((t,i)=>t.onclick=()=>setTab(i));
-if(window.ResizeObserver){const ro=new ResizeObserver(()=>fitViewport());document.querySelectorAll(".pane").forEach(p=>ro.observe(p))}
-window.addEventListener("resize",fitViewport);
 $("btnGenQr").onclick=()=>qrPanel.gen();$("btnCancelQr").onclick=()=>qrPanel.cancel();
-$("btnLogout").onclick=()=>$("logoutMask").classList.remove("hidden");$("logoutCancel").onclick=()=>$("logoutMask").classList.add("hidden");$("logoutConfirm").onclick=()=>{$("logoutMask").classList.add("hidden");doLogout()};
-$("logoutMask").onclick=e=>{if(e.target===$("logoutMask"))$("logoutMask").classList.add("hidden")};document.addEventListener("keydown",e=>{if(e.key!=="Escape")return;$("logoutMask").classList.add("hidden");closeAcctModal();$("delMask").classList.add("hidden");delTargetId="";$("acctMenu").classList.add("hidden")});
-$("logoutAll").onclick=()=>{$("logoutMask").classList.add("hidden");try{Object.keys(localStorage).filter(k=>k.startsWith(RKEY+"_")).forEach(k=>localStorage.removeItem(k));localStorage.removeItem(ACC);localStorage.removeItem(KEY)}catch{}doLogout()};
+$("btnLogout").onclick=()=>showMask($("logoutMask"));$("logoutCancel").onclick=()=>hideMask($("logoutMask"));$("logoutConfirm").onclick=()=>{hideMask($("logoutMask"));doLogout()};
+$("logoutMask").onclick=e=>{if(e.target===$("logoutMask"))hideMask($("logoutMask"))};
+$("jumpCancel").onclick=closeJump;
+$("jumpMask").onclick=e=>{if(e.target===$("jumpMask"))closeJump()};
+$("jumpOk").onclick=()=>{const id=jumpId;closeJump();if(id)location.href="kimi://page/community/moment/"+encodeURIComponent(id)};
+document.addEventListener("keydown",e=>{if(e.key!=="Escape")return;hideMask($("logoutMask"));closeAcctModal();hideMask($("delMask"));hideMask($("pollMask"));delTargetId="";$("acctMenu").classList.add("hidden");
+ document.querySelectorAll(".md3-sel-menu").forEach(m=>m.classList.add("hidden"));
+ dismissReplyMask();closeJump()});
+$("logoutAll").onclick=()=>{hideMask($("logoutMask"));try{Object.keys(localStorage).filter(k=>k.startsWith(RKEY+"_")).forEach(k=>localStorage.removeItem(k));localStorage.removeItem(ACC);localStorage.removeItem(KEY)}catch{}doLogout()};
 $("btnLogin").onclick=doLogin;
-$("btnRefresh").onclick=async()=>{const b=$("btnRefresh");b.disabled=true;$("status").textContent="加载中…";$("momentBody").innerHTML='<div class="empty">拉取中…</div>';$("inappBody").innerHTML="";
-try{await ensure();const[m,i]=await Promise.all([loadMoment(),loadInapp()]);renderMoment($("momentBody"),m);renderInapp($("inappBody"),i);requestAnimationFrame(fitViewport);$("status").textContent=`${m.notifications.length+i.items.length} 条`}catch(e){$("momentBody").innerHTML=`<div class="errbox">${esc(friendly(e.message))}</div>`;$("status").textContent="加载失败，请重试"}b.disabled=false};
-async function refreshData(){const mine=++dgen;try{await ensure();const[m,i]=await Promise.all([loadMoment(),loadInapp()]);if(mine!==dgen)return;renderMoment($("momentBody"),m);renderInapp($("inappBody"),i);requestAnimationFrame(fitViewport);$("status").textContent=`${m.notifications.length+i.items.length} 条`}
+$("btnRefresh").onclick=async()=>{const b=$("btnRefresh");b.disabled=true;$("status").textContent="加载中…";$("momentBody").innerHTML='<div class="empty">拉取中…</div>';
+try{await ensure();const m=await loadMoment();poll.syncFrom(m);renderMoment($("momentBody"),m);$("status").textContent=`${m.notifications.length} 条`}catch(e){$("momentBody").innerHTML=`<div class="errbox">${esc(friendly(e.message))}</div>`;$("status").textContent="加载失败，请重试"}b.disabled=false};
+async function refreshData(){const mine=++dgen;try{await ensure();const m=await loadMoment();if(mine!==dgen)return;poll.syncFrom(m);renderMoment($("momentBody"),m);$("status").textContent=`${m.notifications.length} 条`}
 catch(e){if(mine!==dgen)return;if(/没有 refresh_token/.test(e.message||"")){$("configSec").classList.remove("hidden");$("btnLogout").classList.add("hidden")}$("status").textContent="请重新登录"}}
+/* ---------- 后台静默刷新 ----------
+   默认每 1 秒在后台查一次：不写「加载中」、不清空列表、不改状态栏。
+   只有检测到新消息的 id 才重绘列表 + 用那个轻弹窗提示；无新增或请求失败，界面保持原样。
+   每轮都用响应里的 moments[]/comments[] 重读真实点赞态并只刷新按钮外观（App 里点的赞会同步）。
+   间隔与「自动/手动」可在顶栏时钟按钮里改，改完立即生效，设置存本机。 */
+const POLL_KEY="kimi_poll_cfg";
+function pollCfg(){try{const c=JSON.parse(localStorage.getItem(POLL_KEY))||{};
+return{mode:c.mode==="manual"?"manual":"auto",sec:Math.min(3600,Math.max(1,Math.round(Number(c.sec)||1)))}}catch{return{mode:"auto",sec:1}}}
+function savePollCfg(c){try{localStorage.setItem(POLL_KEY,JSON.stringify(c))}catch{}}
+const poll=(()=>{
+let timer=0,busy=false,cfg=pollCfg(),base=null;
+/* 用 id 做指纹：只认「新出现的条目」，删掉的 / 字段抖动的都不算变化 */
+function keys(m){const set=new Set();
+for(const n of m.notifications||[]){const t=stamp(n.happenedTime??n.happened_time??n.createTime);
+set.add("n:"+String(n.id||[n.momentId,n.commentId,n.notificationType??n.type,t].filter(Boolean).join("~")))}
+return set}
+function clear(){clearTimeout(timer);timer=0}
+function schedule(){clear();if(cfg.mode!=="auto"||!rf)return;timer=setTimeout(tick,cfg.sec*1000)}
+function reset(){clear();base=null;cfg=pollCfg();schedule()}
+function stop(){clear();base=null}
+function syncFrom(m){base=keys(m)}
+async function tick(){
+ if(cfg.mode!=="auto"||!rf){schedule();return}
+ if(busy){schedule();return}
+ busy=true;
+ try{await ensure();
+  const m=await loadMoment();
+  if(cfg.mode!=="auto"||!rf)return;              // 期间切了模式 / 退出了
+  applyTruth(m);                                 // 服务端权威：每 1 秒重读一次
+  const k=keys(m);
+  if(base===null){base=k;syncAllVotes();return}  // 首次只建基线，但按钮状态照样同步
+  let fresh=0;for(const x of k)if(!base.has(x))fresh++;
+  base=k;
+  if(fresh>0){renderMoment($("momentBody"),m);   // 重绘时新按钮自然读到最新真实状态
+   $("status").textContent=`${m.notifications.length} 条`;
+   toast(`有 ${fresh} 条新消息`,true,"up",5000)}
+  else syncAllVotes();                           // 无新增：只刷按钮外观，不重绘、不弹窗、不动状态栏
+  /* App 里点赞/取消赞 → 按钮跟着变，界面其余部分保持原样 */
+ }catch(e){console.warn("[后台刷新]",friendly(e.message))}
+ finally{busy=false;schedule()}}
+/* 切回前台立刻查一次，不必等满一个周期；标签页在后台时由浏览器自行节流 */
+document.addEventListener("visibilitychange",()=>{if(!document.hidden&&cfg.mode==="auto"&&rf&&!busy){clear();tick()}});
+return{reset,stop,syncFrom,get cfg(){return cfg},
+ apply(c){savePollCfg(c);cfg=c;clear();base=null;schedule()}}
+})();
+/* ---------- 自定义下拉：原生 <select> 的 option 弹层由系统绘制，CSS 改不到，
+   这里把 select 留给表单取值，用同主题的触发器 + 浮层菜单替代它的可见部分。---------- */
+function md3Select(sel){
+ if(!sel||sel.dataset.md3)return;
+ sel.dataset.md3="1";
+ const wrap=document.createElement("div");wrap.className="md3-sel";
+ sel.parentNode.insertBefore(wrap,sel);wrap.appendChild(sel);
+ const trig=document.createElement("button");trig.type="button";trig.className="md3-sel-trig";
+ trig.setAttribute("aria-haspopup","listbox");trig.setAttribute("aria-expanded","false");
+ trig.innerHTML='<span class="ms-label"></span><span class="ms-chev">'+IC("chev")+'</span>';
+ wrap.appendChild(trig);
+ const menu=document.createElement("div");menu.className="md3-sel-menu hidden";wrap.appendChild(menu);
+ const lab=trig.querySelector(".ms-label");
+ const opts=()=>sel.options?Array.from(sel.options):[];
+ const cur=()=>opts().find(o=>String(o.value)===String(sel.value))||opts()[0]||null;
+ const close=()=>{menu.classList.add("hidden");trig.setAttribute("aria-expanded","false")};
+ function sync(){const o=cur();lab.textContent=o?o.textContent:"";
+  menu.innerHTML="";
+  for(const op of opts()){
+   const it=document.createElement("button");it.type="button";
+   it.className="md3-sel-item"+(op.value===sel.value?" on":"");
+   it.setAttribute("role","option");it.setAttribute("aria-selected",op.value===sel.value?"true":"false");
+   it.innerHTML='<span>'+esc(op.textContent)+'</span><span class="ms-check">'+IC("check")+'</span>';
+   it.onclick=ev=>{ev.stopPropagation();sel.value=op.value;sync();close();
+    try{sel.dispatchEvent(new Event("change",{bubbles:true}))}catch{}};
+   menu.appendChild(it)}}
+ const open=()=>{sync();menu.classList.remove("hidden");trig.setAttribute("aria-expanded","true")};
+ trig.onclick=ev=>{ev.stopPropagation();menu.classList.contains("hidden")?open():close()};
+ wrap.addEventListener("click",e=>e.stopPropagation());
+ document.addEventListener("click",close);
+ sync();
+ sel._md3Sync=sync;                    /* 代码直接改 value 后调它同步显示 */
+}
+md3Select($("pollMode"));
+
+/* ---------- 后台刷新设置弹窗 ---------- */
+function openPollCfg(){const c=poll.cfg;$("pollMode").value=c.mode;$("pollSec").value=c.sec;
+$("pollMode")._md3Sync&&$("pollMode")._md3Sync();
+$("pollSec").disabled=c.mode!=="auto";showMask($("pollMask"))}
+function closePollCfg(){hideMask($("pollMask"))}
+$("btnPollCfg").onclick=openPollCfg;
+$("pollMode").onchange=()=>{$("pollSec").disabled=$("pollMode").value!=="auto"};
+$("pollCancel").onclick=closePollCfg;
+$("pollMask").onclick=e=>{if(e.target===$("pollMask"))closePollCfg()};
+$("pollSave").onclick=()=>{const mode=$("pollMode").value==="manual"?"manual":"auto";
+let sec=Math.round(Number($("pollSec").value)||1);sec=Math.min(3600,Math.max(1,sec));
+poll.apply({mode,sec});closePollCfg();
+toast(mode==="auto"?`已设为每 ${sec} 秒后台检查`:"已切为手动刷新",true,"clock")};
+
 (function init(){
 let l=accList();
 if(!l.length){let old=null;try{old=JSON.parse(localStorage.getItem(KEY))}catch{}if(old?.refreshToken){rf=old.refreshToken;at=old.accessToken||"";aexp=Number(old.accessExp)||0;did=old.deviceId||"";sid=old.sessionId||"";putAccount(rf,"默认账户")}}
 l=accList();if(l.length){const c=l[0];activeId=c.id;rf=c.refreshToken||"";at=c.accessToken||"";aexp=Number(c.accessExp)||0;did=c.deviceId||"";sid=c.sessionId||"";$("rfInput").value="";$("rfInput").placeholder="已保存 "+l.length+" 个账户，留空即沿用；粘贴新的可添加";onLogin("已恢复「"+c.name+"」")}else renderAccounts();
-setTab(0)})();
+})();
 })();
 </script>
 </body>
